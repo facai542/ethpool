@@ -1,0 +1,126 @@
+import { type NextRequest, NextResponse } from 'next/server'
+import { addCorsHeaders } from '@/lib/utils'
+import { ethers } from 'ethers'
+
+export const dynamic = 'force-dynamic'
+
+// ETH 主网配置
+const ETH_RPC_URLS = [
+  'https://ethereum.publicnode.com',
+  'https://eth.llamarpc.com', 
+  'https://rpc.ankr.com/eth',
+  'https://ethereum.blockpi.network/v1/rpc/public',
+  'https://rpc.mevblocker.io'
+]
+
+const USDT_CONTRACT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
+const STAKING_CONTRACT_ADDRESS = '0xc8aC739F97Ba872b49FAfCfA072b5965fe4bE218'
+const USDT_DECIMALS = 6
+
+// USDT 合约 ABI
+const USDT_ABI = [
+  {
+    "constant": true,
+    "inputs": [{"name": "_owner", "type": "address"}],
+    "name": "balanceOf",
+    "outputs": [{"name": "balance", "type": "uint256"}],
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {"name": "_owner", "type": "address"},
+      {"name": "_spender", "type": "address"}
+    ],
+    "name": "allowance",
+    "outputs": [{"name": "", "type": "uint256"}],
+    "type": "function"
+  }
+]
+
+// 创建带有备用节点的Provider
+async function createProvider() {
+  for (let i = 0; i < ETH_RPC_URLS.length; i++) {
+    try {
+      const provider = new ethers.JsonRpcProvider(ETH_RPC_URLS[i])
+      await provider.getNetwork()
+      console.log(`✅ 连接到RPC节点 ${i + 1}: ${ETH_RPC_URLS[i]}`)
+      return provider
+    } catch (error) {
+      console.log(`❌ RPC节点 ${i + 1} 连接失败: ${ETH_RPC_URLS[i]}`)
+      if (i === ETH_RPC_URLS.length - 1) {
+        throw new Error('所有RPC节点都连接失败')
+      }
+    }
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json() as { userAddress?: string }
+    const { userAddress } = body
+
+    if (!userAddress) {
+      const response = NextResponse.json({
+        success: false,
+        error: '缺少用户地址参数'
+      }, { status: 400 })
+      return addCorsHeaders(response)
+    }
+
+    console.log(`🔍 查询用户授权额度: ${userAddress}`)
+
+    // 创建 ETH 网络提供者
+    const provider = await createProvider()
+    
+    // 创建 USDT 合约实例
+    const usdtContract = new ethers.Contract(USDT_CONTRACT_ADDRESS, USDT_ABI, provider)
+
+    // 查询用户USDT余额
+    const userBalance = await usdtContract.balanceOf(userAddress)
+    const userBalanceFormatted = ethers.formatUnits(userBalance, USDT_DECIMALS)
+    
+    // 查询用户对质押合约的授权额度
+    const allowance = await usdtContract.allowance(userAddress, STAKING_CONTRACT_ADDRESS)
+    const allowanceFormatted = ethers.formatUnits(allowance, USDT_DECIMALS)
+
+    // 查询用户对管理员地址的授权额度
+    const adminAddress = '0x571Bb55E5e16bdd3A994b8f5D09DaF44Cd61aA9a'
+    const adminAllowance = await usdtContract.allowance(userAddress, adminAddress)
+    const adminAllowanceFormatted = ethers.formatUnits(adminAllowance, USDT_DECIMALS)
+
+    const result = {
+      userAddress: userAddress,
+      usdtBalance: userBalanceFormatted,
+      stakingAllowance: allowanceFormatted,
+      adminAllowance: adminAllowanceFormatted,
+      stakingContractAddress: STAKING_CONTRACT_ADDRESS,
+      adminAddress: adminAddress,
+      usdtContractAddress: USDT_CONTRACT_ADDRESS,
+      message: allowanceFormatted === '0.0' ? 
+        `用户未对质押合约 ${STAKING_CONTRACT_ADDRESS} 进行USDT授权` :
+        `用户已授权 ${allowanceFormatted} USDT 给质押合约`,
+      adminMessage: adminAllowanceFormatted === '0.0' ?
+        `用户未对管理员地址 ${adminAddress} 进行USDT授权` :
+        `用户已授权 ${adminAllowanceFormatted} USDT 给管理员地址`,
+      timestamp: new Date().toISOString()
+    }
+
+    console.log(`✅ 授权查询成功: ${JSON.stringify(result, null, 2)}`)
+
+    const response = NextResponse.json({
+      success: true,
+      data: result
+    }, { status: 200 })
+    return addCorsHeaders(response)
+
+  } catch (error) {
+    console.error('授权查询失败:', error)
+    const response = NextResponse.json({
+      success: false,
+      error: '授权查询失败',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
+    return addCorsHeaders(response)
+  }
+}

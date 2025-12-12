@@ -1,0 +1,25 @@
+{
+  "name": "approval-monitor",
+  "version": "1.0.0",
+  "description": "监听 USDT Approval 事件，自动处理用户授权 (Infura 版本)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "keywords": [
+    "ethereum",
+    "approval",
+    "infura",
+    "webhook"
+  ],
+  "dependencies": {
+    "ethers": "^5.7.2",
+    "node-fetch": "^2.7.0",
+    "dotenv": "^16.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+

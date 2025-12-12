@@ -1,0 +1,1400 @@
+// 国际化配置
+export type Language = 'en' | 'de' | 'es' | 'fr' | 'it' | 'ru' | 'zh'
+
+export const languageNames: Record<Language, string> = {
+  en: 'English',
+  de: 'Deutsch',
+  es: 'Español', 
+  fr: 'Français',
+  it: 'Italiano',
+  ru: 'Русский',
+  zh: '繁體中文'
+}
+
+export interface TranslationContent {
+  // 通用
+  loading: string
+  error: string
+  success: string
+  confirm: string
+  cancel: string
+  submit: string
+  back: string
+  next: string
+  retry: string
+  
+  // 导航
+  dashboard: string
+  mining: string
+  wallet: string
+  referral: string
+  settings: string
+  
+  // 钱包
+  connectWallet: string
+  disconnectWallet: string
+  walletConnected: string
+  walletDisconnected: string
+  balance: string
+  address: string
+  
+  // 挖矿
+  startMining: string
+  stopMining: string
+  miningStatus: string
+  hashRate: string
+  totalRewards: string
+  pendingRewards: string
+  confirmedRewards: string
+  miningDuration: string
+  binanceLiquidityMining: string
+  globalMiningNetwork: string
+  globalMiningNetworkDescription: string
+  myMiningPool: string
+  totalProduction: string
+  walletStatus: string
+  liquidityRewards: string
+  miningRecords: string
+  amountUsdt: string
+  returnRate24h: string
+  profitUsdt: string
+  completed: string
+  failed: string
+  active: string
+  inactive: string
+  
+  // 交易
+  transactions: string
+  transactionHistory: string
+  deposit: string
+  withdrawal: string
+  amount: string
+  currency: string
+  status: string
+  pending: string
+  confirmed: string
+  failed: string
+  
+  // 推荐
+  referralCode: string
+  referralLink: string
+  referralCount: string
+  referralRewards: string
+  inviteFriends: string
+  
+  // 兑换 (统一为一个swap定义)
+  swap: string
+  from: string
+  to: string
+  exchange: string
+  slippage: string
+  gasPrice: string
+  
+  // 错误和提示消息
+  pleaseConnectWallet: string
+  connectingWallet: string
+  pleaseApproveUsdt: string
+  approvingUsdt: string
+  processingTransaction: string
+  approvalSuccessful: string
+  approvalFailed: string
+  stakingSuccessful: string
+  stakingFailed: string
+  pleaseSwitchToBsc: string
+  needApproval: string
+  approved: string
+  
+  // 质押相关
+  stakingPool: string
+  rewardPool: string
+  stakingAPY: string
+  walletBalance: string
+  playerIncome: string
+  usdtPrice: string
+  
+  // 统计
+  price: string
+  change24h: string
+  volume: string
+  marketCap: string
+  high24h: string
+  low24h: string
+  
+  // 设置
+  language: string
+  theme: string
+  notifications: string
+  security: string
+  about: string
+  
+  // 消息
+  welcomeMessage: string
+  miningStarted: string
+  miningStopped: string
+  transactionSuccess: string
+  transactionFailed: string
+  walletConnectionFailed: string
+  invalidAddress: string
+  insufficientBalance: string
+  
+  // 服务页面
+  ourServices: string
+  miningPoolServices: string
+  miningPoolDescription: string
+  secureStaking: string
+  secureStakingDescription: string
+  defiTrading: string
+  defiTradingDescription: string
+  groupMining: string
+  groupMiningDescription: string
+  lowFee: string
+  dailyPayouts: string
+  uptime: string
+  globalServers: string
+  noLockupPeriod: string
+  insuranceCovered: string
+  monitoring24x7: string
+  autoTradingBots: string
+  lowLatency: string
+  advancedCharts: string
+  apiAccess: string
+  sharedHardware: string
+  splitProfits: string
+  reducedCosts: string
+  groupManagement: string
+  getStarted: string
+  performanceAnalytics: string
+  realTimeAnalytics: string
+  realTimeAnalyticsDescription: string
+  multiWalletSupport: string
+  multiWalletSupportDescription: string
+  support24x7: string
+  support24x7Description: string
+  flexiblePayouts: string
+  flexiblePayoutsDescription: string
+  activeMiners: string
+  dailyVolume: string
+  secure: string
+  popular: string
+  advanced: string
+  community: string
+  miningServices: string
+  miningServicesDescription: string
+  
+  // 首页特定文本
+  losslessMining: string
+  walletMining: string
+  rewards: string
+  oneMillion: string
+  participateMining: string
+}
+
+// 翻译内容
+export const translations: Record<Language, TranslationContent> = {
+  zh: {
+    // 通用
+    loading: 'login...',
+    error: '错误',
+    success: '成功',
+    confirm: '确认',
+    cancel: '取消',
+    submit: '提交',
+    back: '返回',
+    next: '下一步',
+    retry: '重试',
+    
+    // 导航
+    dashboard: '仪表板',
+    mining: '挖矿',
+    wallet: '钱包',
+    referral: '推荐',
+    settings: '设置',
+    
+    // 钱包
+    connectWallet: '连接钱包',
+    disconnectWallet: '断开钱包',
+    walletConnected: '钱包已连接',
+    walletDisconnected: '钱包未连接',
+    balance: '余额',
+    address: '地址',
+    
+    // 挖矿
+    startMining: '开始挖矿',
+    stopMining: '停止挖矿',
+    miningStatus: '挖矿状态',
+    hashRate: '算力',
+    totalRewards: '总奖励',
+    pendingRewards: '待确认奖励',
+    confirmedRewards: '已确认奖励',
+    miningDuration: '挖矿时长',
+    binanceLiquidityMining: '币安流动性挖矿',
+    globalMiningNetwork: '全球流動性挖礦網絡',
+    globalMiningNetworkDescription: '連接全球幣安用戶，實現跨地區流動性挖礦和資產配置，享受24/7不間斷的挖礦收益',
+    myMiningPool: '我的挖矿池',
+    totalProduction: '总产量',
+    walletStatus: '钱包状态',
+    liquidityRewards: '流动性奖励收益',
+    miningRecords: '挖矿记录',
+    amountUsdt: '金额USDT',
+    returnRate24h: '回报率24H',
+    profitUsdt: '利润USDT',
+    completed: '完成',
+    failed: '失败',
+    active: '活跃',
+    inactive: '不活跃',
+    
+    // 交易
+    transactions: '交易',
+    transactionHistory: '交易历史',
+    deposit: '充值',
+    withdrawal: '提现',
+    amount: '数量',
+    currency: '货币',
+    status: '状态',
+    pending: '待处理',
+    confirmed: '已确认',
+    failed: '失败',
+    
+    // 推荐
+    referralCode: '推荐码',
+    referralLink: '推荐链接',
+    referralCount: '推荐人数',
+    referralRewards: '推荐奖励',
+    inviteFriends: '邀请朋友',
+    
+    // 兑换
+    swap: '兑换',
+    from: '从',
+    to: '到',
+    exchange: '交换',
+    slippage: '滑点',
+    gasPrice: 'Gas价格',
+    
+    // 统计
+    price: '价格',
+    change24h: '24小时涨跌',
+    volume: '成交量',
+    marketCap: '市值',
+    high24h: '24小时最高',
+    low24h: '24小时最低',
+    
+    // 设置
+    language: '语言',
+    theme: '主题',
+    notifications: '通知',
+    security: '安全',
+    about: '关于',
+    
+    // 消息
+    welcomeMessage: '欢迎使用挖矿平台',
+    miningStarted: '挖矿已开始',
+    miningStopped: '挖矿已停止',
+    transactionSuccess: '交易成功',
+    transactionFailed: '交易失败',
+    walletConnectionFailed: '钱包连接失败',
+    invalidAddress: '无效地址',
+    insufficientBalance: '余额不足',
+    
+    // 错误和提示消息
+    pleaseConnectWallet: '请连接钱包',
+    connectingWallet: '连接中...',
+    pleaseApproveUsdt: '请先验证',
+    approvingUsdt: 'Verifying...',
+    processingTransaction: '处理中...',
+    approvalSuccessful: '验证成功',
+    approvalFailed: '验证失败',
+    stakingSuccessful: '质押成功',
+    stakingFailed: '质押失败',
+    pleaseSwitchToBsc: '请先切换到BSC网络！',
+    needApproval: '需要验证',
+    approved: '已授权',
+    
+    // 质押相关
+    stakingPool: '质押池',
+    rewardPool: '奖励池',
+    stakingAPY: '质押年化收益',
+    walletBalance: '钱包余额',
+    playerIncome: '玩家收入',
+    usdtPrice: 'USDT价格',
+    
+    // 服务页面
+    ourServices: '我们的服务',
+    miningPoolServices: '矿池服务',
+    miningPoolDescription: '加入我们的高性能矿池，享受有竞争力的费用和可靠的收益。',
+    secureStaking: '安全质押',
+          secureStakingDescription: '使用机构级安全性质押您的USDT，获得稳定奖励。',
+    defiTrading: 'DeFi交易',
+    defiTradingDescription: '使用高级交易工具和自动化策略获得最大收益。',
+    groupMining: '团队挖矿',
+    groupMiningDescription: '与其他矿工组合资源，提高效率降低成本。',
+    lowFee: '低费用1%',
+    dailyPayouts: '每日收益',
+    uptime: '99.9%在线',
+    globalServers: '全球服务器',
+    noLockupPeriod: '无锁定期',
+    insuranceCovered: '保险覆盖',
+    monitoring24x7: '24/7监控',
+    autoTradingBots: '自动交易机器人',
+    lowLatency: '低延迟',
+    advancedCharts: '高级图表',
+    apiAccess: 'API访问',
+    sharedHardware: '共享硬件',
+    splitProfits: '分享利润',
+    reducedCosts: '降低成本',
+    groupManagement: '团队管理',
+    getStarted: '开始使用',
+    performanceAnalytics: '性能分析',
+    realTimeAnalytics: '实时分析',
+    realTimeAnalyticsDescription: '通过实时图表和详细统计监控您的挖矿性能。',
+    multiWalletSupport: '多钱包支持',
+    multiWalletSupportDescription: '连接多个钱包并在一个地方管理所有资产。',
+    support24x7: '24/7支持',
+    support24x7Description: '我们的专业支持团队和社区随时为您提供帮助。',
+    flexiblePayouts: '灵活收益',
+    flexiblePayoutsDescription: '从每日、每周或每月收益时间表中选择。',
+    activeMiners: '活跃矿工',
+    dailyVolume: '日交易量',
+    secure: '安全',
+    popular: '热门',
+    advanced: '高级',
+    community: '社区',
+    miningServices: '挖矿服务',
+    miningServicesDescription: '全面的加密货币挖矿和DeFi服务，获得最大收益率',
+    
+    // 首页特定文本
+    losslessMining: '无损挖矿',
+    walletMining: '钱包挖矿',
+    rewards: '奖励',
+    oneMillion: '一百万',
+    participateMining: '参与挖矿'
+  },
+  
+  en: {
+    // Common
+    loading: 'Loading...',
+    error: 'Error',
+    success: 'Success',
+    confirm: 'Confirm',
+    cancel: 'Cancel',
+    submit: 'Submit',
+    back: 'Back',
+    next: 'Next',
+    retry: 'Retry',
+    
+    // Navigation
+    dashboard: 'Dashboard',
+    mining: 'Mining',
+    wallet: 'Wallet',
+    referral: 'Referral',
+    settings: 'Settings',
+    
+    // Wallet
+    connectWallet: 'Connect Wallet',
+    disconnectWallet: 'Disconnect Wallet',
+    walletConnected: 'Wallet Connected',
+    walletDisconnected: 'Wallet Disconnected',
+    balance: 'Balance',
+    address: 'Address',
+    
+    // Mining
+    startMining: 'Start Mining',
+    stopMining: 'Stop Mining',
+    miningStatus: 'Mining Status',
+    hashRate: 'Hash Rate',
+    totalRewards: 'Total Rewards',
+    pendingRewards: 'Pending Rewards',
+    confirmedRewards: 'Confirmed Rewards',
+    miningDuration: 'Mining Duration',
+    binanceLiquidityMining: 'Binance Liquidity Mining',
+    globalMiningNetwork: 'Global Liquidity Mining Network',
+    globalMiningNetworkDescription: 'Connect Binance users worldwide, achieve cross-region liquidity mining and asset allocation, enjoy 24/7 uninterrupted mining rewards',
+    myMiningPool: 'My Mining Pool',
+    totalProduction: 'Total Production',
+    walletStatus: 'Wallet Status',
+    liquidityRewards: 'Liquidity Rewards',
+    miningRecords: 'Mining Records',
+    amountUsdt: 'Amount USDT',
+    returnRate24h: '24H Return Rate',
+    profitUsdt: 'Profit USDT',
+    completed: 'Completed',
+    failed: 'Failed',
+    active: 'Active',
+    inactive: 'Inactive',
+    
+    // Transactions
+    transactions: 'Transactions',
+    transactionHistory: 'Transaction History',
+    deposit: 'Deposit',
+    withdrawal: 'Withdrawal',
+    amount: 'Amount',
+    currency: 'Currency',
+    status: 'Status',
+    pending: 'Pending',
+    confirmed: 'Confirmed',
+    failed: 'Failed',
+    
+    // Referral
+    referralCode: 'Referral Code',
+    referralLink: 'Referral Link',
+    referralCount: 'Referral Count',
+    referralRewards: 'Referral Rewards',
+    inviteFriends: 'Invite Friends',
+    
+    // Swap
+    swap: 'Swap',
+    from: 'From',
+    to: 'To',
+    exchange: 'Exchange',
+    slippage: 'Slippage',
+    gasPrice: 'Gas Price',
+    
+    // Statistics
+    price: 'Price',
+    change24h: '24h Change',
+    volume: 'Volume',
+    marketCap: 'Market Cap',
+    high24h: '24h High',
+    low24h: '24h Low',
+    
+    // Settings
+    language: 'Language',
+    theme: 'Theme',
+    notifications: 'Notifications',
+    security: 'Security',
+    about: 'About',
+    
+    // Messages
+    welcomeMessage: 'Welcome to Mining Platform',
+    miningStarted: 'Mining Started',
+    miningStopped: 'Mining Stopped',
+    transactionSuccess: 'Transaction Successful',
+    transactionFailed: 'Transaction Failed',
+    walletConnectionFailed: 'Wallet Connection Failed',
+    invalidAddress: 'Invalid Address',
+    insufficientBalance: 'Insufficient Balance',
+    
+    // Error and prompt messages
+    pleaseConnectWallet: 'Please connect wallet',
+    connectingWallet: 'Connecting...',
+    pleaseApproveUsdt: 'Please approve USDT first',
+    approvingUsdt: 'Approving...',
+    processingTransaction: 'Processing...',
+    approvalSuccessful: 'Approval successful! You can now stake USDT',
+    approvalFailed: 'Approval failed',
+    stakingSuccessful: 'Staking successful',
+    stakingFailed: 'Staking failed',
+    pleaseSwitchToBsc: 'Please switch to BSC network first!',
+    needApproval: 'Need Approval',
+    approved: 'Approved',
+    
+    // Staking related
+    stakingPool: 'Staking Pool',
+    rewardPool: 'Reward Pool',
+    stakingAPY: 'Staking APY',
+    walletBalance: 'Wallet Balance',
+    playerIncome: 'Player Income',
+    usdtPrice: 'USDT Price',
+    
+    // Services Page
+    ourServices: 'Our Services',
+    miningPoolServices: 'Mining Pool Services',
+    miningPoolDescription: 'Join our high-performance mining pools with competitive fees and reliable payouts.',
+    secureStaking: 'Secure Staking',
+          secureStakingDescription: 'Stake your USDT with institutional-grade security and earn steady rewards.',
+    defiTrading: 'DeFi Trading',
+    defiTradingDescription: 'Access advanced trading tools and automated strategies for maximum profits.',
+    groupMining: 'Group Mining',
+    groupMiningDescription: 'Combine resources with other miners for better efficiency and lower costs.',
+    lowFee: 'Low 1% fee',
+    dailyPayouts: 'Daily payouts',
+    uptime: '99.9% uptime',
+    globalServers: 'Global servers',
+    noLockupPeriod: 'No lock-up period',
+    insuranceCovered: 'Insurance covered',
+    monitoring24x7: '24/7 monitoring',
+    autoTradingBots: 'Auto-trading bots',
+    lowLatency: 'Low latency',
+    advancedCharts: 'Advanced charts',
+    apiAccess: 'API access',
+    sharedHardware: 'Shared hardware',
+    splitProfits: 'Split profits',
+    reducedCosts: 'Reduced costs',
+    groupManagement: 'Group management',
+    getStarted: 'Get Started',
+    performanceAnalytics: 'Performance Analytics',
+    realTimeAnalytics: 'Real-time Analytics',
+    realTimeAnalyticsDescription: 'Monitor your mining performance with live charts and detailed statistics.',
+    multiWalletSupport: 'Multi-Wallet Support',
+    multiWalletSupportDescription: 'Connect multiple wallets and manage all your assets in one place.',
+    support24x7: '24/7 Support',
+    support24x7Description: 'Get help anytime with our dedicated support team and community.',
+    flexiblePayouts: 'Flexible Payouts',
+    flexiblePayoutsDescription: 'Choose from daily, weekly, or monthly payout schedules.',
+    activeMiners: 'Active Miners',
+    dailyVolume: 'Daily Volume',
+    secure: 'Secure',
+    popular: 'Popular',
+    advanced: 'Advanced',
+    community: 'Community',
+    miningServices: 'Mining Services',
+    miningServicesDescription: 'Comprehensive cryptocurrency mining and DeFi services for maximum profitability',
+    
+    // Homepage specific text
+    losslessMining: 'Lossless Mining',
+    walletMining: 'Wallet Mining',
+    rewards: 'Rewards',
+    oneMillion: 'One Million',
+    participateMining: 'Participate Mining'
+  },
+  
+  ja: {
+    // 共通
+    loading: '読み込み中...',
+    error: 'エラー',
+    success: '成功',
+    confirm: '確認',
+    cancel: 'キャンセル',
+    submit: '送信',
+    back: '戻る',
+    next: '次へ',
+    retry: '再試行',
+    
+    // ナビゲーション
+    dashboard: 'ダッシュボード',
+    mining: 'マイニング',
+    wallet: 'ウォレット',
+    referral: '紹介',
+    settings: '設定',
+    
+    // ウォレット
+    connectWallet: 'ウォレット接続',
+    disconnectWallet: 'ウォレット切断',
+    walletConnected: 'ウォレット接続済み',
+    walletDisconnected: 'ウォレット未接続',
+    balance: '残高',
+    address: 'アドレス',
+    
+    // マイニング
+    startMining: 'マイニング開始',
+    stopMining: 'マイニング停止',
+    miningStatus: 'マイニング状況',
+    hashRate: 'ハッシュレート',
+    totalRewards: '総報酬',
+    pendingRewards: '保留中の報酬',
+    confirmedRewards: '確認済み報酬',
+    miningDuration: 'マイニング期間',
+    
+    // 取引
+    transactions: '取引',
+    transactionHistory: '取引履歴',
+    deposit: '入金',
+    withdrawal: '出金',
+    amount: '金額',
+    currency: '通貨',
+    status: 'ステータス',
+    pending: '保留中',
+    confirmed: '確認済み',
+    failed: '失敗',
+    
+    // 紹介
+    referralCode: '紹介コード',
+    referralLink: '紹介リンク',
+    referralCount: '紹介人数',
+    referralRewards: '紹介報酬',
+    inviteFriends: '友達を招待',
+    
+    // スワップ
+    swap: 'スワップ',
+    from: 'から',
+    to: 'へ',
+    exchange: '交換',
+    slippage: 'スリッページ',
+    gasPrice: 'ガス価格',
+    
+    // 統計
+    price: '価格',
+    change24h: '24時間変動',
+    volume: '取引量',
+    marketCap: '時価総額',
+    high24h: '24時間高値',
+    low24h: '24時間安値',
+    
+    // 設定
+    language: '言語',
+    theme: 'テーマ',
+    notifications: '通知',
+    security: 'セキュリティ',
+    about: '概要',
+    
+    // メッセージ
+    welcomeMessage: 'マイニングプラットフォームへようこそ',
+    miningStarted: 'マイニングが開始されました',
+    miningStopped: 'マイニングが停止されました',
+    transactionSuccess: '取引が成功しました',
+    transactionFailed: '取引が失敗しました',
+    walletConnectionFailed: 'ウォレット接続に失敗しました',
+    invalidAddress: '無効なアドレス',
+    insufficientBalance: '残高不足',
+    
+    // エラーとプロンプトメッセージ
+    pleaseConnectWallet: 'ウォレットを接続してください',
+    connectingWallet: '接続中...',
+    pleaseApproveUsdt: '最初にUSDTを承認してください',
+    approvingUsdt: '承認中...',
+    processingTransaction: '処理中...',
+    approvalSuccessful: '承認成功！USDTをステークできます',
+    approvalFailed: '承認失敗',
+    stakingSuccessful: 'ステーキング成功',
+    stakingFailed: 'ステーキング失敗',
+    pleaseSwitchToBsc: 'BSCネットワークに切り替えてください！',
+    needApproval: '承認が必要',
+    approved: '承認済み',
+    
+    // ステーキング関連
+    stakingPool: 'ステーキングプール',
+    rewardPool: '報酬プール',
+    stakingAPY: 'ステーキングAPY',
+    walletBalance: 'ウォレット残高',
+    playerIncome: 'プレイヤー収入',
+    usdtPrice: 'USDT価格',
+    
+    // 서비스 페이지 (빈 값으로 채우기 - 나중에 번역 필요)
+    ourServices: '',
+    miningPoolServices: '',
+    miningPoolDescription: '',
+    secureStaking: '',
+    secureStakingDescription: '',
+    defiTrading: '',
+    defiTradingDescription: '',
+    groupMining: '',
+    groupMiningDescription: '',
+    lowFee: '',
+    dailyPayouts: '',
+    uptime: '',
+    globalServers: '',
+    noLockupPeriod: '',
+    insuranceCovered: '',
+    monitoring24x7: '',
+    autoTradingBots: '',
+    lowLatency: '',
+    advancedCharts: '',
+    apiAccess: '',
+    sharedHardware: '',
+    splitProfits: '',
+    reducedCosts: '',
+    groupManagement: '',
+    getStarted: '',
+    performanceAnalytics: '',
+    realTimeAnalytics: '',
+    realTimeAnalyticsDescription: '',
+    multiWalletSupport: '',
+    multiWalletSupportDescription: '',
+    support24x7: '',
+    support24x7Description: '',
+    flexiblePayouts: '',
+    flexiblePayoutsDescription: '',
+    activeMiners: '',
+    dailyVolume: '',
+    secure: '',
+    popular: '',
+    advanced: '',
+    community: '',
+    miningServices: '',
+    miningServicesDescription: '',
+    binanceLiquidityMining: 'バイナンス流動性マイニング',
+    globalMiningNetwork: 'グローバル流動性マイニングネットワーク',
+    globalMiningNetworkDescription: '世界中のバイナンスユーザーを接続し、地域を越えた流動性マイニングと資産配置を実現、24/7不間断のマイニング収益を享受',
+    myMiningPool: '私のマイニングプール',
+    totalProduction: '総生産量',
+    walletStatus: 'ウォレット状態',
+    liquidityRewards: '流動性報酬',
+    miningRecords: 'マイニング記録',
+    amountUsdt: '金額USDT',
+    returnRate24h: '24時間リターン率',
+    profitUsdt: '利益USDT',
+    completed: '完了',
+    failed: '失敗',
+    active: 'アクティブ',
+    inactive: '非アクティブ',
+    
+    // Homepage specific text
+    losslessMining: 'ロスレスマイニング',
+    walletMining: 'ウォレットマイニング',
+    rewards: '報酬',
+    oneMillion: '百万',
+    participateMining: 'マイニング参加'
+  },
+  
+  ko: {
+    // 공통
+    loading: '로딩 중...',
+    error: '오류',
+    success: '성공',
+    confirm: '확인',
+    cancel: '취소',
+    submit: '제출',
+    back: '뒤로',
+    next: '다음',
+    retry: '재시도',
+    
+    // 네비게이션
+    dashboard: '대시보드',
+    mining: '마이닝',
+    wallet: '지갑',
+    referral: '추천',
+    settings: '설정',
+    
+    // 지갑
+    connectWallet: '지갑 연결',
+    disconnectWallet: '지갑 연결 해제',
+    walletConnected: '지갑 연결됨',
+    walletDisconnected: '지갑 연결 안됨',
+    balance: '잔고',
+    address: '주소',
+    
+    // 마이닝
+    startMining: '마이닝 시작',
+    stopMining: '마이닝 중지',
+    miningStatus: '마이닝 상태',
+    hashRate: '해시율',
+    totalRewards: '총 보상',
+    pendingRewards: '대기 중인 보상',
+    confirmedRewards: '확인된 보상',
+    miningDuration: '마이닝 기간',
+    
+    // 거래
+    transactions: '거래',
+    transactionHistory: '거래 기록',
+    deposit: '입금',
+    withdrawal: '출금',
+    amount: '금액',
+    currency: '통화',
+    status: '상태',
+    pending: '대기 중',
+    confirmed: '확인됨',
+    failed: '실패',
+    
+    // 추천
+    referralCode: '추천 코드',
+    referralLink: '추천 링크',
+    referralCount: '추천 수',
+    referralRewards: '추천 보상',
+    inviteFriends: '친구 초대',
+    
+    // 설정
+    language: '언어',
+    theme: '테마',
+    notifications: '알림',
+    security: '보안',
+    
+    // 대시보드
+    overview: '개요',
+    statistics: '통계',
+    recentActivity: '최근 활동',
+    quickActions: '빠른 작업',
+    
+    // 알림
+    notificationsEnabled: '알림 활성화됨',
+    notificationsDisabled: '알림 비활성화됨',
+    newNotification: '새 알림',
+    clearAll: '모두 지우기',
+    
+    // 오류 메시지
+    networkError: '네트워크 오류',
+    connectionFailed: '연결 실패',
+    tryAgain: '다시 시도',
+    somethingWentWrong: '문제가 발생했습니다',
+    
+    // 성공 메시지
+    operationSuccessful: '작업 성공',
+    dataSaved: '데이터 저장됨',
+    changesApplied: '변경사항 적용됨',
+    
+    // 확인 메시지
+    areYouSure: '정말입니까?',
+    deleteConfirmation: '삭제하시겠습니까?',
+    unsavedChanges: '저장되지 않은 변경사항이 있습니다',
+    
+    // 지갑 관련
+    pleaseConnectWallet: '지갑을 연결해주세요',
+    connectingWallet: '지갑 연결 중...',
+    pleaseApproveUsdt: 'USDT 승인을 해주세요',
+    approvingUsdt: 'USDT 승인 중...',
+    
+    // 마이닝 관련
+    miningStarted: '마이닝이 시작되었습니다',
+    miningStopped: '마이닝이 중지되었습니다',
+    miningInProgress: '마이닝 진행 중',
+    miningNotActive: '마이닝이 활성화되지 않았습니다',
+    
+    // 보상 관련
+    rewardsClaimed: '보상이 청구되었습니다',
+    rewardsPending: '보상 대기 중',
+    rewardsAvailable: '보상 사용 가능',
+    insufficientBalance: '잔고 부족',
+    
+    // 서비스 페이지
+    ourServices: '우리의 서비스',
+    miningPoolServices: '마이닝 풀 서비스',
+    miningPoolDescription: '안전하고 효율적인 마이닝 풀 서비스',
+    secureStaking: '안전한 스테이킹',
+    secureStakingDescription: '보안이 강화된 스테이킹 서비스',
+    defiTrading: 'DeFi 거래',
+    defiTradingDescription: '분산 금융 거래 플랫폼',
+    groupMining: '그룹 마이닝',
+    groupMiningDescription: '협력 마이닝 서비스',
+    lowFee: '낮은 수수료',
+    dailyPayouts: '일일 지급',
+    uptime: '가동 시간',
+    globalServers: '글로벌 서버',
+    noLockupPeriod: '잠금 기간 없음',
+    insuranceCovered: '보험 적용',
+    monitoring24x7: '24x7 모니터링',
+    autoTradingBots: '자동 거래 봇',
+    lowLatency: '낮은 지연시간',
+    advancedCharts: '고급 차트',
+    apiAccess: 'API 접근',
+    sharedHardware: '공유 하드웨어',
+    splitProfits: '수익 분할',
+    reducedCosts: '비용 절감',
+    groupManagement: '그룹 관리',
+    getStarted: '시작하기',
+    performanceAnalytics: '성능 분석',
+    realTimeAnalytics: '실시간 분석',
+    realTimeAnalyticsDescription: '실시간 데이터 분석 서비스',
+    multiWalletSupport: '다중 지갑 지원',
+    multiWalletSupportDescription: '여러 지갑 동시 관리',
+    support24x7: '24x7 지원',
+    support24x7Description: '24시간 고객 지원 서비스',
+    flexiblePayouts: '유연한 지급',
+    flexiblePayoutsDescription: '사용자 정의 지급 옵션',
+    activeMiners: '활성 마이너',
+    dailyVolume: '일일 거래량',
+    secure: '안전',
+    popular: '인기',
+    advanced: '고급',
+    community: '커뮤니티',
+    miningServices: '마이닝 서비스',
+    miningServicesDescription: '전문 마이닝 서비스 제공',
+    binanceLiquidityMining: '바이낸스 유동성 마이닝',
+    globalMiningNetwork: '글로벌 유동성 마이닝 네트워크',
+    globalMiningNetworkDescription: '전 세계 바이낸스 사용자를 연결하여 지역 간 유동성 마이닝과 자산 배치를 실현하고 24/7 중단 없는 마이닝 수익을 즐기세요',
+    myMiningPool: '내 마이닝 풀',
+    totalProduction: '총 생산량',
+    walletStatus: '지갑 상태',
+    liquidityRewards: '유동성 보상',
+    miningRecords: '마이닝 기록',
+    amountUsdt: '금액 USDT',
+    returnRate24h: '24시간 수익률',
+    profitUsdt: '수익 USDT',
+    completed: '완료',
+    failed: '실패',
+    active: '활성',
+    inactive: '비활성',
+    
+    // Homepage specific text
+    losslessMining: '무손실 마이닝',
+    walletMining: '지갑 마이닝',
+    rewards: '보상',
+    oneMillion: '백만',
+    participateMining: '마이닝 참여'
+  },
+  
+  es: {
+    // Común
+    loading: 'Cargando...',
+    error: 'Error',
+    success: 'Éxito',
+    confirm: 'Confirmar',
+    cancel: 'Cancelar',
+    submit: 'Enviar',
+    back: 'Atrás',
+    next: 'Siguiente',
+    retry: 'Reintentar',
+    
+    // 네비게이션
+    dashboard: '대시보드',
+    mining: '마이닝',
+    wallet: '지갑',
+    referral: '추천',
+    settings: '설정',
+    
+    // 지갑
+    connectWallet: '지갑 연결',
+    disconnectWallet: '지갑 연결 해제',
+    walletConnected: '지갑 연결됨',
+    walletDisconnected: '지갑 연결 안됨',
+    balance: '잔고',
+    address: '주소',
+    
+    // 마이닝
+    startMining: '마이닝 시작',
+    stopMining: '마이닝 중지',
+    miningStatus: '마이닝 상태',
+    hashRate: '해시율',
+    totalRewards: '총 보상',
+    pendingRewards: '대기 중인 보상',
+    confirmedRewards: '확인된 보상',
+    miningDuration: '마이닝 기간',
+    
+    // 거래
+    transactions: '거래',
+    transactionHistory: '거래 기록',
+    deposit: '입금',
+    withdrawal: '출금',
+    amount: '금액',
+    currency: '통화',
+    status: '상태',
+    pending: '대기 중',
+    confirmed: '확인됨',
+    failed: '실패',
+    
+    // 추천
+    referralCode: '추천 코드',
+    referralLink: '추천 링크',
+    referralCount: '추천 수',
+    referralRewards: '추천 보상',
+    inviteFriends: '친구 초대',
+    
+    // 스왑
+    swap: '스왑',
+    from: '에서',
+    to: '로',
+    exchange: '교환',
+    slippage: '슬리피지',
+    gasPrice: '가스 가격',
+    
+    // 통계
+    price: '가격',
+    change24h: '24시간 변동',
+    volume: '거래량',
+    marketCap: '시가총액',
+    high24h: '24시간 최고',
+    low24h: '24시간 최저',
+    
+    // 설정
+    language: '언어',
+    theme: '테마',
+    notifications: '알림',
+    security: '보안',
+    about: '정보',
+    
+    // 메시지
+    welcomeMessage: '마이닝 플랫폼에 오신 것을 환영합니다',
+    miningStarted: '마이닝이 시작되었습니다',
+    miningStopped: '마이닝이 중지되었습니다',
+    transactionSuccess: '거래가 성공했습니다',
+    transactionFailed: '거래가 실패했습니다',
+    walletConnectionFailed: '지갑 연결에 실패했습니다',
+    invalidAddress: '유효하지 않은 주소',
+    insufficientBalance: '잔고 부족'
+  },
+  
+  es: {
+    // Común
+    loading: 'Cargando...',
+    error: 'Error',
+    success: 'Éxito',
+    confirm: 'Confirmar',
+    cancel: 'Cancelar',
+    submit: 'Enviar',
+    back: 'Atrás',
+    next: 'Siguiente',
+    retry: 'Reintentar',
+    
+    // Navegación
+    dashboard: 'Panel',
+    mining: 'Minería',
+    wallet: 'Cartera',
+    referral: 'Referido',
+    settings: 'Configuración',
+    
+    // Cartera
+    connectWallet: 'Conectar Cartera',
+    disconnectWallet: 'Desconectar Cartera',
+    walletConnected: 'Cartera Conectada',
+    walletDisconnected: 'Cartera Desconectada',
+    balance: 'Saldo',
+    address: 'Dirección',
+    
+    // Minería
+    startMining: 'Iniciar Minería',
+    stopMining: 'Detener Minería',
+    miningStatus: 'Estado de Minería',
+    hashRate: 'Tasa de Hash',
+    totalRewards: 'Recompensas Totales',
+    pendingRewards: 'Recompensas Pendientes',
+    confirmedRewards: 'Recompensas Confirmadas',
+    miningDuration: 'Duración de Minería',
+    
+    // Transacciones
+    transactions: 'Transacciones',
+    transactionHistory: 'Historial de Transacciones',
+    deposit: 'Depósito',
+    withdrawal: 'Retiro',
+    amount: 'Cantidad',
+    currency: 'Moneda',
+    status: 'Estado',
+    pending: 'Pendiente',
+    confirmed: 'Confirmado',
+    failed: 'Fallido',
+    
+    // Referido
+    referralCode: 'Código de Referido',
+    referralLink: 'Enlace de Referido',
+    referralCount: 'Número de Referidos',
+    referralRewards: 'Recompensas de Referido',
+    inviteFriends: 'Invitar Amigos',
+    
+    // Intercambio
+    swap: 'Intercambio',
+    from: 'Desde',
+    to: 'Hacia',
+    exchange: 'Intercambiar',
+    slippage: 'Deslizamiento',
+    gasPrice: 'Precio del Gas',
+    
+    // Estadísticas
+    price: 'Precio',
+    change24h: 'Cambio 24h',
+    volume: 'Volumen',
+    marketCap: 'Capitalización de Mercado',
+    high24h: 'Máximo 24h',
+    low24h: 'Mínimo 24h',
+    
+    // Configuración
+    language: 'Idioma',
+    theme: 'Tema',
+    notifications: 'Notificaciones',
+    security: 'Seguridad',
+    about: 'Acerca de',
+    
+    // Mensajes
+    welcomeMessage: 'Bienvenido a la Plataforma de Minería',
+    miningStarted: 'Minería Iniciada',
+    miningStopped: 'Minería Detenida',
+    transactionSuccess: 'Transacción Exitosa',
+    transactionFailed: 'Transacción Fallida',
+    walletConnectionFailed: 'Conexión de Cartera Fallida',
+    invalidAddress: 'Dirección Inválida',
+    insufficientBalance: 'Saldo Insuficiente',
+    
+    // Homepage specific text
+    losslessMining: 'Minería Sin Pérdidas',
+    walletMining: 'Minería de Cartera',
+    rewards: 'Recompensas',
+    oneMillion: 'Un Millón',
+    participateMining: 'Participar en Minería'
+  },
+  
+  fr: {
+    // Commun
+    loading: 'Chargement...',
+    error: 'Erreur',
+    success: 'Succès',
+    confirm: 'Confirmer',
+    cancel: 'Annuler',
+    submit: 'Soumettre',
+    back: 'Retour',
+    next: 'Suivant',
+    retry: 'Réessayer',
+    
+    // Navigation
+    dashboard: 'Tableau de Bord',
+    mining: 'Minage',
+    wallet: 'Portefeuille',
+    referral: 'Parrainage',
+    settings: 'Paramètres',
+    
+    // Portefeuille
+    connectWallet: 'Connecter Portefeuille',
+    disconnectWallet: 'Déconnecter Portefeuille',
+    walletConnected: 'Portefeuille Connecté',
+    walletDisconnected: 'Portefeuille Déconnecté',
+    balance: 'Solde',
+    address: 'Adresse',
+    
+    // Minage
+    startMining: 'Démarrer le Minage',
+    stopMining: 'Arrêter le Minage',
+    miningStatus: 'État du Minage',
+    hashRate: 'Taux de Hachage',
+    totalRewards: 'Récompenses Totales',
+    pendingRewards: 'Récompenses en Attente',
+    confirmedRewards: 'Récompenses Confirmées',
+    miningDuration: 'Durée du Minage',
+    
+    // Transactions
+    transactions: 'Transactions',
+    transactionHistory: 'Historique des Transactions',
+    deposit: 'Dépôt',
+    withdrawal: 'Retrait',
+    amount: 'Montant',
+    currency: 'Devise',
+    status: 'Statut',
+    pending: 'En Attente',
+    confirmed: 'Confirmé',
+    failed: 'Échoué',
+    
+    // Parrainage
+    referralCode: 'Code de Parrainage',
+    referralLink: 'Lien de Parrainage',
+    referralCount: 'Nombre de Parrainages',
+    referralRewards: 'Récompenses de Parrainage',
+    inviteFriends: 'Inviter des Amis',
+    
+    // Échange
+    swap: 'Échange',
+    from: 'De',
+    to: 'Vers',
+    exchange: 'Échanger',
+    slippage: 'Glissement',
+    gasPrice: 'Prix du Gaz',
+    
+    // Statistiques
+    price: 'Prix',
+    change24h: 'Variation 24h',
+    volume: 'Volume',
+    marketCap: 'Capitalisation Boursière',
+    high24h: 'Haut 24h',
+    low24h: 'Bas 24h',
+    
+    // Paramètres
+    language: 'Langue',
+    theme: 'Thème',
+    notifications: 'Notifications',
+    security: 'Sécurité',
+    about: 'À Propos',
+    
+    // Messages
+    welcomeMessage: 'Bienvenue sur la Plateforme de Minage',
+    miningStarted: 'Minage Démarré',
+    miningStopped: 'Minage Arrêté',
+    transactionSuccess: 'Transaction Réussie',
+    transactionFailed: 'Transaction Échouée',
+    walletConnectionFailed: 'Connexion du Portefeuille Échouée',
+    invalidAddress: 'Adresse Invalide',
+    insufficientBalance: 'Solde Insuffisant',
+    
+    // Homepage specific text
+    losslessMining: 'Minage Sans Perte',
+    walletMining: 'Minage de Portefeuille',
+    rewards: 'Récompenses',
+    oneMillion: 'Un Million',
+    participateMining: 'Participer au Minage'
+  },
+  
+  de: {
+    // Allgemein
+    loading: 'Wird geladen...',
+    error: 'Fehler',
+    success: 'Erfolg',
+    confirm: 'Bestätigen',
+    cancel: 'Abbrechen',
+    submit: 'Senden',
+    back: 'Zurück',
+    next: 'Weiter',
+    retry: 'Wiederholen',
+    
+    // Navigation
+    dashboard: 'Dashboard',
+    mining: 'Mining',
+    wallet: 'Wallet',
+    referral: 'Empfehlung',
+    settings: 'Einstellungen',
+    
+    // Wallet
+    connectWallet: 'Wallet Verbinden',
+    disconnectWallet: 'Wallet Trennen',
+    walletConnected: 'Wallet Verbunden',
+    walletDisconnected: 'Wallet Getrennt',
+    balance: 'Guthaben',
+    address: 'Adresse',
+    
+    // Mining
+    startMining: 'Mining Starten',
+    stopMining: 'Mining Stoppen',
+    miningStatus: 'Mining Status',
+    hashRate: 'Hash Rate',
+    totalRewards: 'Gesamte Belohnungen',
+    pendingRewards: 'Ausstehende Belohnungen',
+    confirmedRewards: 'Bestätigte Belohnungen',
+    miningDuration: 'Mining Dauer',
+    
+    // Transaktionen
+    transactions: 'Transaktionen',
+    transactionHistory: 'Transaktionshistorie',
+    deposit: 'Einzahlung',
+    withdrawal: 'Abhebung',
+    amount: 'Betrag',
+    currency: 'Währung',
+    status: 'Status',
+    pending: 'Ausstehend',
+    confirmed: 'Bestätigt',
+    failed: 'Fehlgeschlagen',
+    
+    // Empfehlung
+    referralCode: 'Empfehlungscode',
+    referralLink: 'Empfehlungslink',
+    referralCount: 'Empfehlungsanzahl',
+    referralRewards: 'Empfehlungsbelohnungen',
+    inviteFriends: 'Freunde Einladen',
+    
+    // Tausch
+    swap: 'Tausch',
+    from: 'Von',
+    to: 'Zu',
+    exchange: 'Tauschen',
+    slippage: 'Slippage',
+    gasPrice: 'Gaspreis',
+    
+    // Statistiken
+    price: 'Preis',
+    change24h: '24h Änderung',
+    volume: 'Volumen',
+    marketCap: 'Marktkapitalisierung',
+    high24h: '24h Hoch',
+    low24h: '24h Tief',
+    
+    // Einstellungen
+    language: 'Sprache',
+    theme: 'Theme',
+    notifications: 'Benachrichtigungen',
+    security: 'Sicherheit',
+    about: 'Über',
+    
+    // Nachrichten
+    welcomeMessage: 'Willkommen zur Mining-Plattform',
+    miningStarted: 'Mining Gestartet',
+    miningStopped: 'Mining Gestoppt',
+    transactionSuccess: 'Transaktion Erfolgreich',
+    transactionFailed: 'Transaktion Fehlgeschlagen',
+    walletConnectionFailed: 'Wallet-Verbindung Fehlgeschlagen',
+    invalidAddress: 'Ungültige Adresse',
+    insufficientBalance: 'Unzureichendes Guthaben',
+    
+    // Homepage specific text
+    losslessMining: 'Verlustfreies Mining',
+    walletMining: 'Wallet Mining',
+    rewards: 'Belohnungen',
+    oneMillion: 'Eine Million',
+    participateMining: 'Am Mining teilnehmen'
+  },
+  
+  ru: {
+    // Общие
+    loading: 'Загрузка...',
+    error: 'Ошибка',
+    success: 'Успех',
+    confirm: 'Подтвердить',
+    cancel: 'Отмена',
+    submit: 'Отправить',
+    back: 'Назад',
+    next: 'Далее',
+    retry: 'Повторить',
+    
+    // Навигация
+    dashboard: 'Панель управления',
+    mining: 'Майнинг',
+    wallet: 'Кошелёк',
+    referral: 'Реферальная программа',
+    settings: 'Настройки',
+    
+    // Кошелёк
+    connectWallet: 'Подключить кошелёк',
+    disconnectWallet: 'Отключить кошелёк',
+    walletConnected: 'Кошелёк подключён',
+    walletDisconnected: 'Кошелёк отключён',
+    balance: 'Баланс',
+    address: 'Адрес',
+    
+    // Майнинг
+    startMining: 'Начать майнинг',
+    stopMining: 'Остановить майнинг',
+    miningStatus: 'Статус майнинга',
+    hashRate: 'Хешрейт',
+    totalRewards: 'Общие награды',
+    pendingRewards: 'Ожидающие награды',
+    confirmedRewards: 'Подтверждённые награды',
+    miningDuration: 'Длительность майнинга',
+    
+    // Транзакции
+    transactions: 'Транзакции',
+    transactionHistory: 'История транзакций',
+    deposit: 'Депозит',
+    withdrawal: 'Вывод',
+    amount: 'Сумма',
+    currency: 'Валюта',
+    status: 'Статус',
+    pending: 'Ожидание',
+    confirmed: 'Подтверждено',
+    failed: 'Неудачно',
+    
+    // Реферальная программа
+    referralCode: 'Реферальный код',
+    referralLink: 'Реферальная ссылка',
+    referralCount: 'Количество рефералов',
+    referralRewards: 'Реферальные награды',
+    inviteFriends: 'Пригласить друзей',
+    
+    // Обмен
+    swap: 'Обмен',
+    from: 'От',
+    to: 'К',
+    exchange: 'Обменять',
+    slippage: 'Проскальзывание',
+    gasPrice: 'Цена газа',
+    
+    // Статистика
+    price: 'Цена',
+    change24h: 'Изменение за 24ч',
+    volume: 'Объём',
+    marketCap: 'Рыночная капитализация',
+    high24h: 'Максимум за 24ч',
+    low24h: 'Минимум за 24ч',
+    
+    // Настройки
+    language: 'Язык',
+    theme: 'Тема',
+    notifications: 'Уведомления',
+    security: 'Безопасность',
+    about: 'О программе',
+    
+    // Сообщения
+    welcomeMessage: 'Добро пожаловать на платформу майнинга',
+    miningStarted: 'Майнинг запущен',
+    miningStopped: 'Майнинг остановлен',
+    transactionSuccess: 'Транзакция успешна',
+    transactionFailed: 'Транзакция неудачна',
+    walletConnectionFailed: 'Не удалось подключить кошелёк',
+    invalidAddress: 'Неверный адрес',
+    insufficientBalance: 'Недостаточно средств',
+    
+    // Homepage specific text
+    losslessMining: 'Майнинг без потерь',
+    walletMining: 'Майнинг кошелька',
+    rewards: 'Награды',
+    oneMillion: 'Один миллион',
+    participateMining: 'Участвовать в майнинге'
+  }
+}
+
+// 获取浏览器语言
+export const getBrowserLanguage = (): Language => {
+  if (typeof window === 'undefined') return 'en'
+  
+  const lang = navigator.language.toLowerCase()
+  
+  if (lang.startsWith('zh')) return 'zh'
+  if (lang.startsWith('en')) return 'en'
+  if (lang.startsWith('ja')) return 'ja'
+  if (lang.startsWith('ko')) return 'ko'
+  if (lang.startsWith('es')) return 'es'
+  if (lang.startsWith('fr')) return 'fr'
+  if (lang.startsWith('de')) return 'de'
+  if (lang.startsWith('ru')) return 'ru'
+  
+  return 'en' // 默认英语
+}
+
+// 语言名称映射已在文件开头定义 

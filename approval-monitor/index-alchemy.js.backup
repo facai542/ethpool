@@ -1,0 +1,282 @@
+/**
+ * USDT Approval 事件监听服务
+ * 
+ * 功能：
+ * 1. 监听 USDT 合约的 Approval 事件
+ * 2. 只处理授权给我们质押合约的事件
+ * 3. 自动调用后端 API 处理授权
+ * 4. 自动添加用户地址到交易监听
+ * 
+ * 部署：Railway.app (24/7 运行)
+ */
+
+const { Alchemy, Network } = require('alchemy-sdk')
+const { ethers } = require('ethers')
+const fetch = require('node-fetch')
+require('dotenv').config()
+
+// ========== 配置 ==========
+const CONFIG = {
+  // Alchemy 配置
+  ALCHEMY_API_KEY: process.env.ALCHEMY_API_KEY,
+  
+  // 合约地址
+  USDT_CONTRACT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+  YOUR_STAKING_CONTRACT: '0xc8aC739F97Ba872b49FAfCfA072b5965fe4bE218',
+  
+  // 后端 API
+  API_ENDPOINT: process.env.API_ENDPOINT || 'https://ethmax.vercel.app',
+  
+  // 健康检查间隔（毫秒）
+  HEARTBEAT_INTERVAL: 60000 // 1 分钟
+}
+
+// 验证配置
+if (!CONFIG.ALCHEMY_API_KEY) {
+  console.error('❌ 错误：未设置 ALCHEMY_API_KEY 环境变量')
+  console.error('   请在 .env 文件或 Railway 中配置')
+  process.exit(1)
+}
+
+// 统计信息
+const stats = {
+  startTime: new Date(),
+  totalApprovals: 0,
+  successfulProcessed: 0,
+  failedProcessed: 0,
+  lastApprovalTime: null
+}
+
+// ========== 初始化 Alchemy ==========
+console.log('\n🔧 初始化 Alchemy SDK...')
+const alchemy = new Alchemy({
+  apiKey: CONFIG.ALCHEMY_API_KEY,
+  network: Network.ETH_MAINNET
+})
+console.log('✅ Alchemy SDK 初始化成功')
+
+// ========== Approval 事件监听 ==========
+async function startApprovalMonitor() {
+  console.log('\n' + '='.repeat(60))
+  console.log('🎯 USDT Approval 事件监听服务')
+  console.log('='.repeat(60))
+  console.log(`📍 监听合约: ${CONFIG.USDT_CONTRACT}`)
+  console.log(`🎯 质押合约: ${CONFIG.YOUR_STAKING_CONTRACT}`)
+  console.log(`🌐 后端 API: ${CONFIG.API_ENDPOINT}`)
+  console.log('='.repeat(60) + '\n')
+
+  try {
+    // 创建 Approval 事件过滤器
+    // topics[0] = 事件签名：Approval(address,address,uint256)
+    // topics[1] = owner (任何用户，设为 null 表示不过滤)
+    // topics[2] = spender (我们的质押合约)
+    const filter = {
+      address: CONFIG.USDT_CONTRACT,
+      topics: [
+        ethers.utils.id('Approval(address,address,uint256)'),
+        null, // owner - 任何用户
+        ethers.utils.hexZeroPad(CONFIG.YOUR_STAKING_CONTRACT, 32) // spender - 只要我们的合约
+      ]
+    }
+
+    console.log('🔍 过滤器配置:')
+    console.log('   - 合约地址:', filter.address)
+    console.log('   - 事件签名:', filter.topics[0])
+    console.log('   - Owner:', filter.topics[1] || '任何用户')
+    console.log('   - Spender:', CONFIG.YOUR_STAKING_CONTRACT)
+    console.log()
+
+    // 开始监听
+    console.log('🎧 开始监听 Approval 事件...\n')
+    
+    alchemy.ws.on(filter, async (log) => {
+      try {
+        stats.totalApprovals++
+        stats.lastApprovalTime = new Date()
+        
+        console.log('\n' + '━'.repeat(60))
+        console.log('🔔 收到 Approval 事件!')
+        console.log('━'.repeat(60))
+        
+        // 解析事件数据
+        const iface = new ethers.utils.Interface([
+          'event Approval(address indexed owner, address indexed spender, uint256 value)'
+        ])
+        const parsed = iface.parseLog(log)
+        
+        const userAddress = parsed.args.owner
+        const spender = parsed.args.spender
+        const rawValue = parsed.args.value
+        const amount = ethers.utils.formatUnits(rawValue, 6) // USDT 6位小数
+        const txHash = log.transactionHash
+        const blockNumber = log.blockNumber
+        
+        console.log('📊 事件详情:')
+        console.log(`   👤 授权者 (owner): ${userAddress}`)
+        console.log(`   🎯 被授权者 (spender): ${spender}`)
+        console.log(`   💰 授权额度: ${amount} USDT`)
+        console.log(`   🔗 交易哈希: ${txHash}`)
+        console.log(`   📦 区块高度: ${blockNumber}`)
+        console.log()
+        
+        // 双重验证：确保 spender 是我们的合约
+        if (spender.toLowerCase() !== CONFIG.YOUR_STAKING_CONTRACT.toLowerCase()) {
+          console.log('⚠️  警告：spender 不是我们的合约，跳过处理')
+          console.log(`   期望: ${CONFIG.YOUR_STAKING_CONTRACT}`)
+          console.log(`   实际: ${spender}`)
+          return
+        }
+        
+        console.log('✅ 验证通过：用户授权给我们的合约!')
+        console.log()
+        
+        // 处理授权
+        await handleApproval({
+          userAddress,
+          amount,
+          txHash,
+          blockNumber
+        })
+        
+      } catch (error) {
+        stats.failedProcessed++
+        console.error('❌ 处理 Approval 事件失败:', error)
+        if (error instanceof Error) {
+          console.error('   错误信息:', error.message)
+          console.error('   错误堆栈:', error.stack)
+        }
+      }
+    })
+
+    console.log('✅ Approval 监听服务已启动')
+    console.log('💡 当用户授权时，会自动处理并添加到交易监听\n')
+    
+  } catch (error) {
+    console.error('❌ 启动 Approval 监听失败:', error)
+    process.exit(1)
+  }
+}
+
+// ========== 处理授权 ==========
+async function handleApproval({ userAddress, amount, txHash, blockNumber }) {
+  console.log('🔄 开始处理授权...')
+  
+  try {
+    // 调用后端授权 API
+    console.log(`📡 调用后端 API: ${CONFIG.API_ENDPOINT}/api/user/authorize`)
+    
+    const response = await fetch(`${CONFIG.API_ENDPOINT}/api/user/authorize`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        wallet_address: userAddress,
+        isAuthorized: true,
+        txHash: txHash,
+        amount: amount.replace(/,/g, ''), // 移除千位分隔符
+        source: 'approval_monitor',
+        blockNumber: blockNumber
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`API 返回错误状态: ${response.status} ${response.statusText}`)
+    }
+
+    const result = await response.json()
+    
+    if (result.success) {
+      stats.successfulProcessed++
+      console.log('✅ 后端处理成功!')
+      console.log(`   📝 用户 ID: ${result.data?.userId || '未知'}`)
+      console.log(`   📍 授权状态: ${result.data?.isAuthorized ? '已授权' : '未授权'}`)
+      console.log(`   🎁 奖励已发放`)
+      console.log(`   📡 已自动添加到交易监听`)
+      console.log()
+      console.log('🎉 授权处理完成!')
+      
+      return { success: true, userId: result.data?.userId }
+    } else {
+      stats.failedProcessed++
+      console.warn('⚠️  后端处理失败:', result.error || '未知错误')
+      return { success: false, error: result.error }
+    }
+    
+  } catch (error) {
+    stats.failedProcessed++
+    console.error('❌ 调用后端 API 失败:', error)
+    if (error instanceof Error) {
+      console.error('   错误信息:', error.message)
+    }
+    return { success: false, error: error instanceof Error ? error.message : '未知错误' }
+  }
+}
+
+// ========== 健康检查 ==========
+function startHealthCheck() {
+  setInterval(() => {
+    const uptime = Math.floor((Date.now() - stats.startTime.getTime()) / 1000)
+    const hours = Math.floor(uptime / 3600)
+    const minutes = Math.floor((uptime % 3600) / 60)
+    const seconds = uptime % 60
+    
+    console.log('\n' + '─'.repeat(60))
+    console.log('💓 健康检查')
+    console.log('─'.repeat(60))
+    console.log(`⏰ 运行时间: ${hours}时${minutes}分${seconds}秒`)
+    console.log(`📊 总计 Approval 事件: ${stats.totalApprovals}`)
+    console.log(`✅ 处理成功: ${stats.successfulProcessed}`)
+    console.log(`❌ 处理失败: ${stats.failedProcessed}`)
+    console.log(`🕐 最后事件时间: ${stats.lastApprovalTime ? stats.lastApprovalTime.toLocaleString('zh-CN') : '无'}`)
+    console.log(`📅 当前时间: ${new Date().toLocaleString('zh-CN')}`)
+    console.log('─'.repeat(60) + '\n')
+  }, CONFIG.HEARTBEAT_INTERVAL)
+}
+
+// ========== 错误处理 ==========
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ 未处理的 Promise 拒绝:', reason)
+  console.error('   Promise:', promise)
+})
+
+process.on('uncaughtException', (error) => {
+  console.error('❌ 未捕获的异常:', error)
+  console.error('   堆栈:', error.stack)
+  // 不退出进程，继续运行
+})
+
+process.on('SIGINT', () => {
+  console.log('\n\n👋 收到停止信号，正在关闭...')
+  console.log('\n📊 最终统计:')
+  console.log(`   总计 Approval 事件: ${stats.totalApprovals}`)
+  console.log(`   处理成功: ${stats.successfulProcessed}`)
+  console.log(`   处理失败: ${stats.failedProcessed}`)
+  console.log('\n✅ Approval 监听服务已停止\n')
+  process.exit(0)
+})
+
+process.on('SIGTERM', () => {
+  console.log('\n\n👋 收到终止信号，正在关闭...')
+  process.exit(0)
+})
+
+// ========== 启动服务 ==========
+async function main() {
+  console.log('\n🚀 启动 USDT Approval 监听服务...\n')
+  
+  // 启动监听
+  await startApprovalMonitor()
+  
+  // 启动健康检查
+  startHealthCheck()
+  
+  console.log('✅ 服务启动完成！等待 Approval 事件...\n')
+}
+
+// 启动
+main().catch((error) => {
+  console.error('❌ 服务启动失败:', error)
+  process.exit(1)
+})
+

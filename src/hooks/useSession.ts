@@ -1,0 +1,174 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
+import { sessionService, type UserSession } from '@/services/sessionService'
+
+interface UseSessionReturn {
+  user: UserSession['user'] | null
+  wallet: UserSession['wallet'] | null
+  session: UserSession['session'] | null
+  isLoading: boolean
+  isAuthenticated: boolean
+  login: (walletAddress: string, walletType?: string, networkId?: number) => Promise<boolean>
+  logout: (logoutAll?: boolean) => Promise<void>
+  refreshSession: () => Promise<void>
+}
+
+export function useSession(): UseSessionReturn {
+  const pathname = usePathname()
+  const [user, setUser] = useState<UserSession['user'] | null>(null)
+  const [wallet, setWallet] = useState<UserSession['wallet'] | null>(null)
+  const [session, setSession] = useState<UserSession['session'] | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  // 检查是否是管理后台或代理后台路由
+  const isAdminRoute = pathname?.startsWith('/admin') || pathname?.startsWith('/agent')
+
+  // 初始化会话
+  const initializeSession = useCallback(async () => {
+    // 管理后台和代理后台不需要用户会话验证
+    if (isAdminRoute) {
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      setIsLoading(true)
+      
+      // 检查本地是否有会话令牌
+      if (!sessionService.hasValidSession()) {
+        setIsLoading(false)
+        return
+      }
+
+      // 验证会话
+      const sessionData = await sessionService.autoValidateSession()
+      
+      if (sessionData) {
+        setUser(sessionData.user)
+        setWallet(sessionData.wallet)
+        setSession(sessionData.session)
+        setIsAuthenticated(true)
+      } else {
+        // 会话无效，清除状态
+        setUser(null)
+        setWallet(null)
+        setSession(null)
+        setIsAuthenticated(false)
+      }
+    } catch (error) {
+      console.error('初始化会话失败:', error)
+      setUser(null)
+      setWallet(null)
+      setSession(null)
+      setIsAuthenticated(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [isAdminRoute])
+
+  // 登录
+  const login = useCallback(async (
+    walletAddress: string, 
+    walletType: string = 'metamask', 
+    networkId: number = 56
+  ): Promise<boolean> => {
+    try {
+      setIsLoading(true)
+      
+      const result = await sessionService.createSession(walletAddress, walletType, networkId)
+      
+      if (result.success && result.data) {
+        setUser(result.data.user)
+        setWallet({
+          address: walletAddress,
+          type: walletType,
+          networkId
+        })
+        setIsAuthenticated(true)
+        return true
+      } else {
+        console.error('登录失败:', result.error)
+        return false
+      }
+    } catch (error) {
+      console.error('登录异常:', error)
+      return false
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // 登出
+  const logout = useCallback(async (logoutAll: boolean = false): Promise<void> => {
+    try {
+      setIsLoading(true)
+      
+      await sessionService.logout(logoutAll)
+      
+      setUser(null)
+      setWallet(null)
+      setSession(null)
+      setIsAuthenticated(false)
+    } catch (error) {
+      console.error('登出异常:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // 刷新会话
+  const refreshSession = useCallback(async (): Promise<void> => {
+    try {
+      setIsLoading(true)
+      
+      const sessionData = await sessionService.autoValidateSession()
+      
+      if (sessionData) {
+        setUser(sessionData.user)
+        setWallet(sessionData.wallet)
+        setSession(sessionData.session)
+        setIsAuthenticated(true)
+      } else {
+        setUser(null)
+        setWallet(null)
+        setSession(null)
+        setIsAuthenticated(false)
+      }
+    } catch (error) {
+      console.error('刷新会话失败:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // 组件挂载时初始化会话
+  useEffect(() => {
+    initializeSession()
+  }, [initializeSession])
+
+  // 定期刷新会话（每5分钟），管理后台不刷新
+  useEffect(() => {
+    if (!isAuthenticated || isAdminRoute) return
+
+    const interval = setInterval(() => {
+      refreshSession()
+    }, 5 * 60 * 1000) // 5分钟
+
+    return () => clearInterval(interval)
+  }, [isAuthenticated, isAdminRoute, refreshSession])
+
+  return {
+    user,
+    wallet,
+    session,
+    isLoading,
+    isAuthenticated,
+    login,
+    logout,
+    refreshSession
+  }
+}
+
