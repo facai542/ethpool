@@ -5,8 +5,6 @@ import { useI18n } from "@/contexts/I18nContext";
 
 const languages = [
   { code: "en", label: "English", flag: "🇺🇸" },
-  { code: "zh-CN", label: "简体中文", flag: "🇨🇳" },
-  { code: "zh", label: "繁體中文", flag: "🇹🇼" },
   { code: "ja", label: "日本語", flag: "🇯🇵" },
   { code: "es", label: "Español", flag: "🇪🇸" },
   { code: "fr", label: "Français", flag: "🇫🇷" },
@@ -17,6 +15,7 @@ const languages = [
   { code: "id", label: "Bahasa Indonesia", flag: "🇮🇩" },
   { code: "de", label: "Deutsch", flag: "🇩🇪" },
   { code: "it", label: "Italiano", flag: "🇮🇹" },
+  { code: "zh", label: "繁體中文", flag: "🇹🇼" },
 ];
 
 export const LanguageSelectorDropdown = () => {
@@ -38,12 +37,7 @@ export const LanguageSelectorDropdown = () => {
   }, []);
 
   const handleLanguageChange = (langCode: string) => {
-    // 映射新的语言代码到现有i18n系统支持的代码
-    let mappedCode = langCode;
-    if (langCode === 'zh-CN') {
-      mappedCode = 'zh'; // 简体中文映射到zh
-    }
-    setLanguage(mappedCode as any);
+    setLanguage(langCode as any);
     setOpen(false);
   };
 

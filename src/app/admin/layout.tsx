@@ -67,6 +67,7 @@ export default function AdminLayout({
     { id: 'system-config', name: '系统配置', icon: 'settings', href: '/admin/system/config' },
     { id: 'system-settings', name: '网站设置', icon: 'settings', href: '/admin/system/settings' },
     { id: 'auth-config', name: '授权配置', icon: 'settings', href: '/admin/system/auth-config' },
+    { id: 'telegram-bot-config', name: 'Telegram Bot配置', icon: 'settings', href: '/admin/system/telegram-bot-config' },
   ]
 
   useEffect(() => {

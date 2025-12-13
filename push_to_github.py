@@ -28,3 +28,4 @@ print(f"Branch: {result.stdout}{result.stderr}")
 result = subprocess.run(["git", "push", "-u", "origin", "main", "--force"], capture_output=True, text=True)
 print(f"Push: {result.stdout}{result.stderr}")
 
+

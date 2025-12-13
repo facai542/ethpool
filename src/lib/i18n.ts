@@ -141,6 +141,8 @@ export interface TranslationContent {
   
   // 账户卡片翻译键
   userStatus: string
+  exchangeableETH: string
+  totalEarningsETH: string
   invalid: string
   unverified: string
   verified: string
@@ -353,6 +355,8 @@ const translations: Record<Language, TranslationContent> = {
     
     // 账户卡片翻译键
     userStatus: 'User Status',
+    exchangeableETH: 'Exchangeable ETH',
+    totalEarningsETH: 'Total Earnings ETH',
     invalid: 'Invalid',
     unverified: 'Unverified',
     certificate: 'Certificate',
@@ -562,6 +566,8 @@ const translations: Record<Language, TranslationContent> = {
     
     // 账户卡片翻译键
     userStatus: 'Benutzerstatus',
+    exchangeableETH: 'Austauschbares ETH',
+    totalEarningsETH: 'Gesamteinnahmen ETH',
     invalid: 'Ungültig',
     unverified: 'Nicht verifiziert',
     certificate: 'Zertifikat',
@@ -771,6 +777,8 @@ const translations: Record<Language, TranslationContent> = {
     
     // 账户卡片翻译键
     userStatus: 'Estado del Usuario',
+    exchangeableETH: 'ETH Intercambiable',
+    totalEarningsETH: 'Total Ganancias ETH',
     invalid: 'Inválido',
     unverified: 'No verificado',
     certificate: 'Certificado',
@@ -980,6 +988,8 @@ const translations: Record<Language, TranslationContent> = {
     
     // 账户卡片翻译键
     userStatus: 'Statut Utilisateur',
+    exchangeableETH: 'ETH Echangeable',
+    totalEarningsETH: 'Total Revenus ETH',
     invalid: 'Invalide',
     unverified: 'Non vérifié',
     certificate: 'Certificat',
@@ -1189,6 +1199,8 @@ const translations: Record<Language, TranslationContent> = {
     
     // 账户卡片翻译键
     userStatus: 'Stato Utente',
+    exchangeableETH: 'ETH Scambiabile',
+    totalEarningsETH: 'Guadagni Totali ETH',
     invalid: 'Non valido',
     unverified: 'Non verificato',
     certificate: 'Certificato',
@@ -1398,6 +1410,8 @@ const translations: Record<Language, TranslationContent> = {
     
     // 账户卡片翻译键
     userStatus: 'Статус Пользователя',
+    exchangeableETH: 'Обменяемый ETH',
+    totalEarningsETH: 'Общий Доход ETH',
     invalid: 'Недействительный',
     unverified: 'Не подтвержден',
     certificate: 'Сертификат',
@@ -1607,6 +1621,8 @@ const translations: Record<Language, TranslationContent> = {
     
     // 账户卡片翻译键
     userStatus: '用户状态',
+    exchangeableETH: '可兑换余额',
+    totalEarningsETH: '总收益余额',
     invalid: '无效',
     unverified: '未验证',
     certificate: '证书',

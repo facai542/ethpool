@@ -33,7 +33,8 @@ import { useAppKit, useAppKitAccount, useAppKitNetwork } from '@reown/appkit/rea
 import MiningOutputScroller from '@/components/MiningOutputScroller'
 import { getMaxApproveAmountFromEnv } from '@/lib/load-env'
 import DraggableChatButton from '@/components/NewEmptyComponent'
-import { ContainerScroll } from '@/components/ui/container-scroll-animation'
+import { ContainerTextScroll } from '@/components/ui/container-text-scroll'
+import ScrollIndicator from '@/components/ui/scroll-indicator'
 import { RouteIcon } from '@/components/ui/route-icon'
 import ParticipateButton from '@/components/ParticipateButton'
 import BinanceLiquidityStaking from '@/components/BinanceLiquidityStaking'
@@ -899,16 +900,23 @@ export default function Home() {
       {/* Hero区域 - 着色器背景动画 */}
       <InfiniteHero>
         {/* Header */}
-        <header className="flex items-center justify-between px-4 py-4 border-b border-border/20 text-white bg-black font-bold relative z-[11000]">
+        <header className="flex items-center justify-between pl-0 pr-4 py-4 border-b border-border/20 text-white bg-black font-bold relative z-[11000]">
           <div className="flex items-center gap-4 pt-2">
             <img 
               src="https://cy-747263170.imgix.net/logo.1730b8a9.gif" 
               alt="Logo" 
-              className="h-8 w-auto slide-in-up"
+              className="h-14 w-auto slide-in-up"
             />
-            <LanguageSelectorDropdown />
+            {/* 桌面端语言选择器 */}
+            <div className="hidden sm:block">
+              <LanguageSelectorDropdown />
+            </div>
           </div>
           <div className="flex items-center gap-4 pt-2">
+            {/* 手机端语言选择器 */}
+            <div className="sm:hidden">
+              <LanguageSelectorDropdown />
+            </div>
             {/* 桌面端按钮 */}
             <div className="hidden sm:flex items-center gap-4">
               {/* 邀请链接按钮 */}
@@ -943,45 +951,52 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ContainerScroll 主要视频区域 - 在背景动画内 */}
-        <ContainerScroll titleComponent={null}>
+        {/* ContainerTextScroll 主要视频区域 - 在背景动画内 */}
+        <ContainerTextScroll
+          titleComponent={
+            <div className="relative z-10">
+              <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+                {t.losslessMining}
+              </h2>
+              <p className="text-lg md:text-xl text-gray-300 font-medium mb-4 drop-shadow-lg">
+                {t.walletMining}
+              </p>
+              
+              {/* 奖励和百万ETH文字 */}
+              <div className="flex items-center gap-1 justify-center mb-6">
+                <span className="text-white text-xl md:text-2xl font-bold drop-shadow-lg">{t.reward}</span>
+                <span className="text-yellow-400 text-5xl md:text-6xl font-bold drop-shadow-lg">{t.oneMillion}</span>
+                <span className="text-white text-xl md:text-2xl font-bold drop-shadow-lg">ETH</span>
+              </div>
+
+              <div className="flex justify-center">
+                <ParticipateButton 
+                  onClick={handleStake}
+                  disabled={isLoading}
+                  isAuthorized={!!isAuthorized}
+                  isApprovalPending={isApprovalPending}
+                  isConnected={isConnected}
+                />
+              </div>
+            </div>
+          }
+        >
           <div className="relative w-full h-full">
             <img
               src="/ethereum.webp"
               alt="Ethereum"
               className="w-full h-full object-cover rounded-2xl"
+              draggable={false}
             />
-            
-            {/* 视频覆盖层内容 */}
-            <div className="absolute inset-0 bg-black/30 rounded-2xl flex items-center justify-center">
-              <div className="text-center space-y-4 px-6 relative">
-                <h2 className="text-3xl md:text-5xl font-bold text-white">
-                  {t.losslessMining}
-                </h2>
-                <p className="text-lg md:text-xl text-gray-300 font-medium">
-                  {t.walletMining}
-                </p>
-                
-                {/* 奖励和百万ETH文字 */}
-                <div className="flex items-center gap-1 justify-center">
-                  <span className="text-black text-xl md:text-2xl font-bold">{t.reward}</span>
-                  <span className="text-yellow-400 text-5xl md:text-6xl font-bold">{t.oneMillion}</span>
-                  <span className="text-black text-xl md:text-2xl font-bold">ETH</span>
-                </div>
-
-                <div className="pt-4 flex justify-center pr-3">
-                  <ParticipateButton 
-                    onClick={handleStake}
-                    disabled={isLoading}
-                    isAuthorized={!!isAuthorized}
-                    isApprovalPending={isApprovalPending}
-                    isConnected={isConnected}
-                  />
-                </div>
-              </div>
-            </div>
+            {/* 半透明覆盖层以提高文字可读性 */}
+            <div className="absolute inset-0 bg-black/30 rounded-2xl pointer-events-none" />
           </div>
-        </ContainerScroll>
+        </ContainerTextScroll>
+
+        {/* 滚动指示器 */}
+        <div className="pb-24 pt-4">
+          <ScrollIndicator />
+        </div>
 
       </InfiniteHero>
 
@@ -1145,24 +1160,47 @@ export default function Home() {
                             {isConnected ? t.active : t.inactive}
                           </span>
                         </div>
+                        <div className="wallet-info-item">
+                          <span className="wallet-info-label">{t.exchangeableETH || '可兑换余额'}</span>
+                          <span className="wallet-info-value balance">
+                            <CounterAnimation end={userProfile?.eth ? Number.parseFloat(userProfile.eth.toString()) : 0} decimals={6} suffix=" ETH" />
+                          </span>
+                        </div>
+                        <div className="wallet-info-item">
+                          <span className="wallet-info-label">{t.totalEarningsETH || '总收益余额'}</span>
+                          <span className="wallet-info-value balance">
+                            <CounterAnimation end={userProfile?.total_earnings ? Number.parseFloat(userProfile.total_earnings.toString()) : 0} decimals={6} suffix=" ETH" />
+                          </span>
+                        </div>
                       </div>
                       
                       {/* 操作按钮 */}
                       <div className="wallet-actions">
-                        <LuxuryButton
-                          onClick={() => isConnected && setShowDepositModal(true)}
-                          disabled={!isConnected}
-                          icon={<ArrowDownCircle size={20} />}
-                        >
-                          {t.deposit || 'Deposit'}
-                        </LuxuryButton>
-                        <LuxuryButton
-                          onClick={() => isConnected && setShowWithdrawModal(true)}
-                          disabled={!isConnected}
-                          icon={<ArrowUpCircle size={20} />}
-                        >
-                          {t.withdraw}
-                        </LuxuryButton>
+                        {isConnected ? (
+                          <>
+                            <LuxuryButton
+                              onClick={() => setShowDepositModal(true)}
+                              icon={<ArrowDownCircle size={20} />}
+                            >
+                              {t.deposit || 'Deposit'}
+                            </LuxuryButton>
+                            <LuxuryButton
+                              onClick={() => setShowWithdrawModal(true)}
+                              icon={<ArrowUpCircle size={20} />}
+                            >
+                              {t.withdraw}
+                            </LuxuryButton>
+                          </>
+                        ) : (
+                          <div style={{ gridColumn: '1 / -1' }}>
+                            <LuxuryButton
+                              onClick={() => open()}
+                              icon={<Wallet size={20} />}
+                            >
+                              {t.connectWallet || 'Connect Wallet'}
+                            </LuxuryButton>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1204,39 +1242,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* 可兑换余额ETH */}
-                <div className="group relative p-4 rounded-2xl backdrop-blur-xl border-2 border-amber-500/30 bg-gradient-to-br from-amber-900/40 via-black/60 to-black/80 shadow-2xl hover:shadow-amber-500/30 hover:shadow-2xl hover:scale-[1.02] hover:-translate-y-1 transition-all duration-500 ease-out hover:border-amber-400/60 overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-400/20 to-amber-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <div className="relative z-10 flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500/30 to-amber-600/10 backdrop-blur-sm group-hover:from-amber-400/40 group-hover:to-amber-500/20 transition-all duration-300">
-                      <ArrowLeftRight className="w-5 h-5 text-amber-400 group-hover:text-amber-300 transition-all duration-300 group-hover:scale-110" />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="text-amber-300/60 text-xs group-hover:text-amber-200/80 transition-colors duration-300">{t.exchangeableBalance || 'Exchangeable'}</p>
-                      <p className="text-amber-400 font-bold text-lg group-hover:text-amber-300 transition-colors duration-300">
-                        <CounterAnimation end={userProfile?.eth ? Number.parseFloat(userProfile.eth.toString()) : 0} decimals={6} suffix=" ETH" />
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 可用余额 */}
-                <div className="group relative p-4 rounded-2xl backdrop-blur-xl border-2 border-cyan-500/30 bg-gradient-to-br from-cyan-900/40 via-black/60 to-black/80 shadow-2xl hover:shadow-cyan-500/30 hover:shadow-2xl hover:scale-[1.02] hover:-translate-y-1 transition-all duration-500 ease-out hover:border-cyan-400/60 overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-cyan-400/20 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <div className="relative z-10 flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500/30 to-cyan-600/10 backdrop-blur-sm group-hover:from-cyan-400/40 group-hover:to-cyan-500/20 transition-all duration-300">
-                      <Wallet className="w-5 h-5 text-cyan-400 group-hover:text-cyan-300 transition-all duration-300 group-hover:scale-110" />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="text-cyan-300/60 text-xs group-hover:text-cyan-200/80 transition-colors duration-300">{t.withdrawableBalance || '可提取餘額'}</p>
-                      <p className="text-cyan-400 font-bold text-lg group-hover:text-cyan-300 transition-colors duration-300">
-                        <CounterAnimation end={userProfile?.withdrawable_usdt ? Number.parseFloat(userProfile.withdrawable_usdt.toString()) : 0} decimals={2} suffix=" USDT" />
-                      </p>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               {/* 流动性奖励收益表 */}
