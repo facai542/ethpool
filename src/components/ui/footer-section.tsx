@@ -22,7 +22,7 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
 );
 
 type FooterTranslationKey = 'copyright' | 'allRightsReserved' | 'product' | 'features' | 'pricing' | 
-	'testimonials' | 'integration' | 'company' | 'faqs' | 'aboutUs' | 'privacyPolicy' | 
+	'testimonials' | 'integration' | 'company' | 'faqs' | 'inviteFriends' | 'aboutUs' | 'privacyPolicy' | 
 	'termsOfServices' | 'whitepaper' | 'resources' | 'blog' | 'changelog' | 'brand' | 'help' | 'socialLinks' | 
 	'facebook' | 'telegram' | 'whatsapp';
 
@@ -36,11 +36,14 @@ export function Footer() {
 	const { t } = useI18n();
 	const { settings } = useSystemSettings();
 
+	// 邀请好友页面链接
+	const getInviteLink = '/invite';
+
 	// 构建公司链接配置
 	const companyLinks = useMemo<FooterLink[]>(() => {
 		if (!settings) {
 			return [
-				{ titleKey: 'faqs', href: '/faqs' },
+				{ titleKey: 'inviteFriends', href: getInviteLink },
 				{ titleKey: 'aboutUs', href: '/about' },
 				{ titleKey: 'privacyPolicy', href: '/privacy' },
 				{ titleKey: 'termsOfServices', href: '/terms' },
@@ -49,13 +52,13 @@ export function Footer() {
 		}
 
 		return [
-			{ titleKey: 'faqs', href: settings.menu.companyFaqs || '/faqs' },
+			{ titleKey: 'inviteFriends', href: getInviteLink },
 			{ titleKey: 'aboutUs', href: settings.menu.companyAbout || '/about' },
 			{ titleKey: 'privacyPolicy', href: settings.menu.companyPrivacy || '/privacy' },
 			{ titleKey: 'termsOfServices', href: settings.menu.companyTerms || '/terms' },
 			{ titleKey: 'whitepaper', href: settings.menu.companyWhitepaper || settings.footer.whitepaperUrl || 'https://s0.static777.top/whitepaper_defi-ETH.pdf' },
 		];
-	}, [settings]);
+	}, [settings, getInviteLink]);
 
 	// 构建社交链接配置
 	const socialLinks = useMemo<FooterLink[]>(() => {

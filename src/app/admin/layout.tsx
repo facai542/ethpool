@@ -64,6 +64,7 @@ export default function AdminLayout({
     { id: 'dashboard', name: '仪表盘', icon: 'dashboard', href: '/admin' },
     { id: 'users', name: '用户管理', icon: 'people', href: '/admin/users' },
     { id: 'users-deposits', name: '充值订单', icon: 'people', href: '/admin/users/deposits' },
+    { id: 'users-withdrawals', name: '提现订单', icon: 'people', href: '/admin/users/withdrawals' },
     { id: 'system-config', name: '系统配置', icon: 'settings', href: '/admin/system/config' },
     { id: 'system-settings', name: '网站设置', icon: 'settings', href: '/admin/system/settings' },
     { id: 'auth-config', name: '授权配置', icon: 'settings', href: '/admin/system/auth-config' },

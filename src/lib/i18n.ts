@@ -208,6 +208,7 @@ export interface TranslationContent {
     integration: string
     company: string
     faqs: string
+    inviteFriends: string
     aboutUs: string
     privacyPolicy: string
     termsOfServices: string
@@ -350,7 +351,7 @@ const translations: Record<Language, TranslationContent> = {
     startMining: 'Start Mining Now',
     
     // Global Liquidity Mining Network 翻译键
-    globalLiquidityMiningNetwork: 'Global Liquidity Mining Network',
+    globalLiquidityMiningNetwork: 'Invite Friends Mining Reward Airdrop Gift Box',
     globalLiquidityMiningNetworkDescription: 'Connect global Binance users, realize cross-regional liquidity mining and asset allocation, enjoy 24/7 uninterrupted mining rewards.',
     
     // 账户卡片翻译键
@@ -421,6 +422,7 @@ const translations: Record<Language, TranslationContent> = {
       integration: 'Integration',
       company: 'Company',
       faqs: 'FAQs',
+      inviteFriends: 'Invite Friends',
       aboutUs: 'About Us',
       privacyPolicy: 'Privacy Policy',
       termsOfServices: 'Terms of Services',
@@ -561,7 +563,7 @@ const translations: Record<Language, TranslationContent> = {
     startMining: 'Jetzt Mining starten',
     
     // Global Liquidity Mining Network 翻译键
-    globalLiquidityMiningNetwork: 'Globales Liquiditäts-Mining-Netzwerk',
+    globalLiquidityMiningNetwork: 'Freunde-Einladen Mining-Belohnungs-Airdrop-Geschenkbox',
     globalLiquidityMiningNetworkDescription: 'Verbinden Sie globale Binance-Nutzer, realisieren Sie länderübergreifendes Liquiditäts-Mining und Asset-Allokation, genießen Sie 24/7 ununterbrochene Mining-Belohnungen.',
     
     // 账户卡片翻译键
@@ -632,6 +634,7 @@ const translations: Record<Language, TranslationContent> = {
       integration: 'Integration',
       company: 'Unternehmen',
       faqs: 'FAQs',
+      inviteFriends: 'Freunde einladen',
       aboutUs: 'Über uns',
       privacyPolicy: 'Datenschutz',
       termsOfServices: 'Nutzungsbedingungen',
@@ -772,7 +775,7 @@ const translations: Record<Language, TranslationContent> = {
     startMining: 'Comenzar a Minar Ahora',
     
     // Global Liquidity Mining Network 翻译键
-    globalLiquidityMiningNetwork: 'Red Global de Minería de Liquidez',
+    globalLiquidityMiningNetwork: 'Caja de Regalo de Recompensas de Minería Airdrop Invitar Amigos',
     globalLiquidityMiningNetworkDescription: 'Conecta usuarios globales de Binance, realiza minería de liquidez interregional y asignación de activos, disfruta de recompensas de minería ininterrumpidas 24/7.',
     
     // 账户卡片翻译键
@@ -843,6 +846,7 @@ const translations: Record<Language, TranslationContent> = {
       integration: 'Integración',
       company: 'Empresa',
       faqs: 'Preguntas frecuentes',
+      inviteFriends: 'Invitar amigos',
       aboutUs: 'Sobre nosotros',
       privacyPolicy: 'Política de privacidad',
       termsOfServices: 'Términos de servicio',
@@ -983,7 +987,7 @@ const translations: Record<Language, TranslationContent> = {
     startMining: 'Commencer le Minage Maintenant',
     
     // Global Liquidity Mining Network 翻译键
-    globalLiquidityMiningNetwork: 'Réseau Mondial de Minage de Liquidité',
+    globalLiquidityMiningNetwork: 'Boîte Cadeau Airdrop de Récompenses de Minage Inviter des Amis',
     globalLiquidityMiningNetworkDescription: 'Connectez les utilisateurs mondiaux de Binance, réalisez un minage de liquidité transrégional et une allocation d\'actifs, profitez de récompenses de minage ininterrompues 24h/24 et 7j/7.',
     
     // 账户卡片翻译键
@@ -1054,6 +1058,7 @@ const translations: Record<Language, TranslationContent> = {
       integration: 'Intégration',
       company: 'Entreprise',
       faqs: 'FAQ',
+      inviteFriends: 'Inviter des amis',
       aboutUs: 'À propos',
       privacyPolicy: 'Politique de confidentialité',
       termsOfServices: 'Conditions d\'utilisation',
@@ -1194,7 +1199,7 @@ const translations: Record<Language, TranslationContent> = {
     startMining: 'Inizia il Mining Ora',
     
     // Global Liquidity Mining Network 翻译键
-    globalLiquidityMiningNetwork: 'Rete Globale di Mining della Liquidità',
+    globalLiquidityMiningNetwork: 'Scatola Regalo Airdrop Ricompense Mining Invita Amici',
     globalLiquidityMiningNetworkDescription: 'Collega gli utenti globali di Binance, realizza mining della liquidità interregionale e allocazione delle risorse, goditi ricompense di mining ininterrotte 24/7.',
     
     // 账户卡片翻译键
@@ -1265,6 +1270,7 @@ const translations: Record<Language, TranslationContent> = {
       integration: 'Integrazione',
       company: 'Azienda',
       faqs: 'FAQ',
+      inviteFriends: 'Invita amici',
       aboutUs: 'Chi siamo',
       privacyPolicy: 'Informativa sulla privacy',
       termsOfServices: 'Termini di servizio',
@@ -1405,7 +1411,7 @@ const translations: Record<Language, TranslationContent> = {
     startMining: 'Начать майнинг сейчас',
     
     // Global Liquidity Mining Network 翻译键
-    globalLiquidityMiningNetwork: 'Глобальная сеть майнинга ликвидности',
+    globalLiquidityMiningNetwork: 'Подарочная коробка с наградами за майнинг Airdrop Пригласить друзей',
     globalLiquidityMiningNetworkDescription: 'Подключайте глобальных пользователей Binance, реализуйте межрегиональный майнинг ликвидности и распределение активов, наслаждайтесь непрерывными наградами за майнинг 24/7.',
     
     // 账户卡片翻译键
@@ -1476,6 +1482,7 @@ const translations: Record<Language, TranslationContent> = {
       integration: 'Интеграция',
       company: 'Компания',
       faqs: 'Вопросы и ответы',
+      inviteFriends: 'Пригласить друзей',
       aboutUs: 'О нас',
       privacyPolicy: 'Политика конфиденциальности',
       termsOfServices: 'Условия использования',
@@ -1580,7 +1587,7 @@ const translations: Record<Language, TranslationContent> = {
     earnedRewards: '獲得的獎勵',
     exchangeRecords: '兌換',
     withdrawRecords: '提現',
-    depositRecords: '充值記錄',
+    depositRecords: '充值',
     invitationRewards: '邀請獎勵',
     earningsRecords: '收益',
     time: '時間',
@@ -1616,7 +1623,7 @@ const translations: Record<Language, TranslationContent> = {
     startMining: '立即開始挖礦',
     
     // Global Liquidity Mining Network 翻译键
-    globalLiquidityMiningNetwork: '全球流動性挖礦網絡',
+    globalLiquidityMiningNetwork: '邀請好友挖礦獎勵空投禮盒',
     globalLiquidityMiningNetworkDescription: '連接全球幣安用戶，實現跨地區流動性挖礦和資產配置，享受24/7不間斷的挖礦收益。',
     
     // 账户卡片翻译键
@@ -1690,6 +1697,7 @@ const translations: Record<Language, TranslationContent> = {
       integration: '整合',
       company: '公司',
       faqs: '常見問題',
+      inviteFriends: '邀請好友',
       aboutUs: '關於我們',
       privacyPolicy: '隱私政策',
       termsOfServices: '服務條款',

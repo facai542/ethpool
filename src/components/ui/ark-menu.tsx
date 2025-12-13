@@ -74,7 +74,7 @@ export const ActionMenu = ({ groups }: ActionMenuProps) => (
       <MoreHorizontal size={16} />
     </Menu.Trigger>
     <Menu.Positioner>
-      <Menu.Content className="mt-2 w-48 rounded-xl border border-slate-700 bg-slate-800 shadow-lg p-2 text-sm text-slate-200 z-[9999]">
+      <Menu.Content className="mt-2 w-48 rounded-xl border border-slate-700 bg-black shadow-lg p-2 text-sm text-slate-200 z-[9999]">
         {groups.map((group, gIndex) => (
           <div key={group.label}>
             <Menu.ItemGroup>

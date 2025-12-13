@@ -21,11 +21,22 @@ export default function ClientBody({
 }: {
   children: React.ReactNode;
 }) {
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const pathname = usePathname();
   
   // 检查是否是管理后台路由
   const isAdminRoute = pathname?.startsWith('/admin');
+  // 检查是否是邀请页面路由（邀请页面不显示页脚）
+  const isInviteRoute = pathname === '/invite';
+  
+  // 检查是否已经显示过启动屏（只在首次打开网站时显示）
+  const [isInitialLoading, setIsInitialLoading] = useState(() => {
+    if (typeof window === 'undefined') {
+      return true; // 服务器端默认显示
+    }
+    // 检查 localStorage 中是否已经标记为已显示过
+    const hasShownSplash = localStorage.getItem('hasShownSplash');
+    return !hasShownSplash; // 如果没有标记，则显示启动屏
+  });
   // Remove any extension-added classes during hydration
   useEffect(() => {
     // This runs only on the client after hydration
@@ -147,8 +158,8 @@ export default function ClientBody({
     }
   }, []);
 
-  // 管理后台不显示加载动画和页脚
-  if (isAdminRoute) {
+  // 管理后台和邀请页面不显示加载动画和页脚
+  if (isAdminRoute || isInviteRoute) {
     return (
       <div className="antialiased flex flex-col min-h-screen">
         {children}
@@ -156,10 +167,19 @@ export default function ClientBody({
     );
   }
 
+  // 启动屏加载完成的处理函数
+  const handleLoadingComplete = () => {
+    // 标记已经显示过启动屏
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hasShownSplash', 'true');
+    }
+    setIsInitialLoading(false);
+  };
+
   return (
     <div className="antialiased flex flex-col min-h-screen">
       {isInitialLoading ? (
-        <LoadingScreen onLoadingComplete={() => setIsInitialLoading(false)} />
+        <LoadingScreen onLoadingComplete={handleLoadingComplete} />
       ) : (
         <>
           <div className="flex-1">

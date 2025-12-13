@@ -11,10 +11,10 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = (page - 1) * limit
 
-    // 构建查询 - 只选择需要的字段
+    // 构建查询 - 只选择存在的字段
     let query = supabase
       .from('deposit_history')
-      .select('id, member_id, wallet_address, usdt_amount, amount, tx_hash, status, created_at, updated_at', { count: 'exact' })
+      .select('id, member_id, wallet_address, usdt_amount, tx_hash, status, created_at, completed_at, approved_at, admin_approved, approved_by, notes', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -32,22 +32,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 
-    // 映射字段：将 usdt_amount 映射为 amount
+    // 映射字段：将数据库字段映射为前端期望的格式
     const mappedOrders = (orders || []).map(order => ({
-      ...order,
-      amount: order.usdt_amount || order.amount || 0
+      id: order.id,
+      user_id: order.member_id?.toString() || '',
+      wallet_address: order.wallet_address || '',
+      amount: parseFloat(order.usdt_amount?.toString() || '0'),
+      status: order.status || 'pending',
+      tx_hash: order.tx_hash || undefined,
+      created_at: order.created_at || '',
+      updated_at: order.completed_at || order.approved_at || undefined,
+      confirmed_at: order.status === 'completed' ? (order.completed_at || order.approved_at) : undefined,
+      admin_note: order.notes || undefined
     }))
 
-    // 获取统计数据 - 只选择需要的字段，限制数量
+    // 获取统计数据 - 只选择存在的字段，限制数量
     const { data: allOrders } = await supabase
       .from('deposit_history')
-      .select('status, usdt_amount, amount, created_at')
+      .select('status, usdt_amount, created_at')
       .limit(10000) // 限制查询数量以提升性能
 
     // 映射统计数据中的金额字段
     const mappedAllOrders = (allOrders || []).map(order => ({
       ...order,
-      amount: order.usdt_amount || order.amount || 0
+      amount: parseFloat(order.usdt_amount?.toString() || '0')
     }))
 
     const stats = {
@@ -55,12 +63,12 @@ export async function GET(request: NextRequest) {
       pending_orders: mappedAllOrders.filter(o => o.status === 'pending').length || 0,
       completed_orders: mappedAllOrders.filter(o => o.status === 'completed').length || 0,
       failed_orders: mappedAllOrders.filter(o => o.status === 'failed' || o.status === 'cancelled').length || 0,
-      total_amount: mappedAllOrders.filter(o => o.status === 'completed').reduce((sum, o) => sum + (parseFloat(o.amount?.toString() || '0') || 0), 0) || 0,
+      total_amount: mappedAllOrders.filter(o => o.status === 'completed').reduce((sum, o) => sum + (o.amount || 0), 0) || 0,
       today_amount: mappedAllOrders.filter(o => {
         const today = new Date().toISOString().split('T')[0]
         const orderDate = o.created_at?.split('T')[0]
         return orderDate === today && o.status === 'completed'
-      }).reduce((sum, o) => sum + (parseFloat(o.amount?.toString() || '0') || 0), 0) || 0
+      }).reduce((sum, o) => sum + (o.amount || 0), 0) || 0
     }
 
     return NextResponse.json({

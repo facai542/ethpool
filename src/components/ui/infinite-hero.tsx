@@ -230,13 +230,17 @@ export default function InfiniteHero({ children }: InfiniteHeroProps) {
 
 	return (
 		<div
-			className="relative min-h-screen w-full overflow-hidden bg-black text-white"
+			className="relative min-h-screen w-full overflow-hidden bg-[#0E0E0E] md:bg-black text-white"
 		>
-			<div className="absolute inset-0" ref={bgRef}>
+			{/* 手机端静态背景 */}
+			<div className="md:hidden absolute inset-0 bg-[#0E0E0E]" />
+			
+			{/* PC端动画背景 */}
+			<div className="hidden md:block absolute inset-0" ref={bgRef}>
 				<ShaderBackground className="h-full w-full" />
 			</div>
 
-			<div className="pointer-events-none absolute inset-0 [background:radial-gradient(120%_80%_at_50%_50%,_transparent_40%,_black_100%)]" />
+			<div className="hidden md:block pointer-events-none absolute inset-0 [background:radial-gradient(120%_80%_at_50%_50%,_transparent_40%,_black_100%)]" />
 
 			<div className="relative z-10">
 				{children}

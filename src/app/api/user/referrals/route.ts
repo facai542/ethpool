@@ -19,17 +19,29 @@ export async function GET(request: NextRequest) {
     // 首先获取用户信息（包括邀请码）
     const { data: userInfo, error: userError } = await supabase
       .from('nh_member_new')
-      .select('id, referral_code, childs')
+      .select('id, referral_code')
       .eq('wallet_address', wallet_address)
       .eq('is_active', true)
-      .single()
+      .maybeSingle()
 
+    // 如果用户不存在，返回空数据而不是错误
     if (userError || !userInfo) {
-      console.error('❌ 查询用户信息失败:', userError)
-      return NextResponse.json(
-        { success: false, error: '用户不存在' },
-        { status: 404 }
-      )
+      console.log('⚠️ 用户不存在或查询失败，返回空数据:', wallet_address)
+      // 返回空数据结构，让前端可以正常显示
+      return NextResponse.json({
+        success: true,
+        data: {
+          referralCode: null,
+          referralLink: null,
+          stats: {
+            totalReferrals: 0,
+            activeReferrals: 0,
+            totalEarned: '0.000',
+            thisMonthEarned: '0.000'
+          },
+          recentReferrals: []
+        }
+      })
     }
 
     // 获取被邀请用户数量（通过referred_by字段）

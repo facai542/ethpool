@@ -254,28 +254,40 @@ const BinanceLiquidityStaking: React.FC<BinanceLiquidityStakingProps> = ({ userE
     try {
       setIsLoadingRate(true);
       const response = await fetch(`/api/exchange?from=${fromCurrency}&to=${toCurrency}&amount=1`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Response is not JSON');
-      }
-      const data = await response.json();
       
-      if (data.success && data.data.rate) {
+      // 先读取响应内容，即使状态码不是 200
+      const contentType = response.headers.get('content-type');
+      let data: any = null;
+      
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          console.warn('⚠️ 无法解析响应为 JSON');
+        }
+      }
+      
+      // 如果响应成功且有数据
+      if (response.ok && data?.success && data?.data?.rate) {
         setExchangeRate(data.data.rate);
         console.log(`✅ 实时汇率获取成功: 1${fromCurrency} = ${data.data.rate}${toCurrency}`);
+        return;
+      }
+      
+      // 如果是不支持的兑换对（400 错误），使用默认汇率
+      if (response.status === 400) {
+        console.warn('⚠️ 不支持的兑换对，使用默认汇率:', data?.error || 'Unknown error');
       } else {
         console.warn('⚠️ 获取汇率失败，使用默认汇率');
-        // 设置默认汇率（如果 API 失败）
-        if (fromCurrency === 'ETH' && toCurrency === 'USDT') {
-          setExchangeRate(4480.37);
-        } else if (fromCurrency === 'USDT' && toCurrency === 'ETH') {
-          setExchangeRate(1 / 4480.37);
-        } else {
-          setExchangeRate(1); // 其他币种对默认 1:1
-        }
+      }
+      
+      // 设置默认汇率
+      if (fromCurrency === 'ETH' && toCurrency === 'USDT') {
+        setExchangeRate(4480.37);
+      } else if (fromCurrency === 'USDT' && toCurrency === 'ETH') {
+        setExchangeRate(1 / 4480.37);
+      } else {
+        setExchangeRate(1); // 其他币种对默认 1:1
       }
     } catch (error) {
       console.error('❌ 获取汇率失败:', error);

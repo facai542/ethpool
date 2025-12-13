@@ -34,7 +34,7 @@ export const ContainerTextScroll = ({
   return (
     <div
       ref={containerRef}
-      className="h-[45rem] md:h-[55rem] flex items-center justify-center relative p-2 md:p-20"
+      className="h-[35rem] md:h-[45rem] flex items-center justify-center relative p-2 md:p-20"
     >
       <motion.div
         style={{ translateY }}
@@ -47,7 +47,7 @@ export const ContainerTextScroll = ({
           {/* Title inside card */}
           <motion.div
             style={{ translateY: titleTranslateY, scale: titleScale }}
-            className="absolute inset-0 flex items-center justify-center text-center px-4"
+            className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center text-center px-4 -mt-8 md:-mt-12"
           >
             <div className="text-white">
               {titleComponent}

