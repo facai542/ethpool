@@ -17,10 +17,11 @@ export async function GET(request: NextRequest) {
     console.log('🔍 查询用户邀请统计，地址:', wallet_address)
 
     // 首先获取用户信息（包括邀请码）
+    // 使用不区分大小写的查询，因为钱包地址可能大小写不一致
     const { data: userInfo, error: userError } = await supabase
       .from('nh_member_new')
       .select('id, referral_code')
-      .eq('wallet_address', wallet_address)
+      .ilike('wallet_address', wallet_address)
       .eq('is_active', true)
       .maybeSingle()
 
@@ -92,15 +93,12 @@ export async function GET(request: NextRequest) {
       tier: referral.approved === 1 ? 'Gold' : 'Bronze'
     })) || []
 
-    // 生成正确的邀请链接
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://webapp-95ojkryz0-alexs-projects-6db273bb.vercel.app'
-    const referralLink = `${baseUrl}?ref=${userInfo.referral_code}`
-
+    // 不生成邀请链接，让前端根据当前域名动态生成
     const response = {
       success: true,
       data: {
         referralCode: userInfo.referral_code,
-        referralLink: referralLink,
+        referralLink: null, // 前端会根据当前域名动态生成
         stats: {
           totalReferrals: totalReferrals || 0,
           activeReferrals: activeReferrals || 0,

@@ -300,7 +300,7 @@ function getSidebarContent(activeSection: string): SidebarContent {
         {
           title: "快速访问",
           items: [
-            { icon: <Share size={16} className="text-slate-50" />, label: "打开新窗口", path: "https://chat.boltcode.vip" },
+            { icon: <Share size={16} className="text-slate-50" />, label: "打开新窗口", path: "https://kefu-seven.vercel.app/" },
           ],
         },
       ],

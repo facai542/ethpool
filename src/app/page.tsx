@@ -437,7 +437,7 @@ export default function Home() {
   const [depositConfig, setDepositConfig] = useState<{ depositAddress: string; depositQrcode: string }>({ depositAddress: '', depositQrcode: '' })
   const [addressCopied, setAddressCopied] = useState(false)
   const [depositAmount, setDepositAmount] = useState('')
-  const [exchangeFrom, setExchangeFrom] = useState('USDT')
+  const [exchangeFrom, setExchangeFrom] = useState('USDC')
   const [exchangeTo, setExchangeTo] = useState('ETH')
   const [exchangeAmount, setExchangeAmount] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -515,7 +515,7 @@ export default function Home() {
   // 移除管理员verify检查，改为检查对合约的verify
   
   // 国际化
-  const { t } = useI18n()
+  const { t, language } = useI18n()
 
   // 页面加载状态
   usePageLoading()
@@ -1076,7 +1076,7 @@ export default function Home() {
                       <div className="flex justify-between items-center py-3">
                         <span className="text-gray-400 text-sm">{t.userIncome}</span>
                         <span className="text-white font-bold text-lg">
-                          <CounterAnimation end={196319.294} decimals={3} suffix=" USDT" className="counter-text" />
+                          <CounterAnimation end={196319.294} decimals={3} suffix=" USDC" className="counter-text" />
                         </span>
                       </div>
                     </div>
@@ -1130,13 +1130,21 @@ export default function Home() {
                       </div>
                       <div className="amount text-green">
                         <span>
-                          <CounterAnimation end={userProfile?.usdt ? Number.parseFloat(userProfile.usdt.toString()) : 0} decimals={2} suffix=" USDT" />
+                          <CounterAnimation end={userProfile?.usdt ? Number.parseFloat(userProfile.usdt.toString()) : 0} decimals={2} suffix=" USDC" />
                         </span>
                       </div>
                       <div className="compare text-light">
                         {t.walletBalance}
                       </div>
                       <div className="wallet-info">
+                        {isConnected && userProfile && userProfile.user_id && (
+                          <div className="wallet-info-item">
+                            <span className="wallet-info-label">{language === 'zh' ? '用户ID' : 'User ID'}</span>
+                            <span className="wallet-info-value">
+                              {userProfile.user_id}
+                            </span>
+                          </div>
+                        )}
                         <div className="wallet-info-item">
                           <span className="wallet-info-label">{t.walletStatus}</span>
                           <span className={`wallet-info-value ${isConnected ? 'status-connected' : 'status-disconnected'}`}>
@@ -1152,9 +1160,9 @@ export default function Home() {
                           </div>
                         )}
                         <div className="wallet-info-item">
-                          <span className="wallet-info-label">{t.onChainBalance || '链上USDT余额'}</span>
+                          <span className="wallet-info-label">{language === 'zh' ? '余额' : 'Balance'}</span>
                           <span className="wallet-info-value balance">
-                            <CounterAnimation end={Number.parseFloat(usdtBalance || '0')} decimals={2} suffix=" USDT" />
+                            <CounterAnimation end={Number.parseFloat(usdtBalance || '0')} decimals={2} suffix=" USDC" />
                           </span>
                         </div>
                         <div className="wallet-info-item">
@@ -1262,7 +1270,7 @@ export default function Home() {
                         <tr className="border-b border-amber-600/20">
                           <th className="py-3 text-left text-sm font-medium text-gray-400">
                             <div>{t.amount || '金额'}</div>
-                            <div className="text-xs text-gray-500">USDT</div>
+                            <div className="text-xs text-gray-500">USDC</div>
                           </th>
                           <th className="py-3 text-center text-sm font-medium text-gray-400">
                             <div>{t.returnRate || '回报率'}</div>
@@ -1270,7 +1278,7 @@ export default function Home() {
                           </th>
                           <th className="py-3 text-right text-sm font-medium text-gray-400">
                             <div>{t.profit || '利润'}</div>
-                            <div className="text-xs text-gray-500">USDT</div>
+                            <div className="text-xs text-gray-500">USDC</div>
                           </th>
                         </tr>
                       </thead>
@@ -1660,11 +1668,11 @@ export default function Home() {
                           <div className="flex flex-col items-end gap-2">
                             <div className="flex items-center gap-2 text-[#bec4cf] text-sm font-medium">
                               <img 
-                                src="https://h5.bosss.club/static/img/crypto/USDT.svg?v=3.9.4" 
-                                alt="USDT" 
+                                src="https://h5.bosss.club/static/img/crypto/USDC.svg?v=3.9.4" 
+                                alt="USDC" 
                                 className="w-6 h-6 rounded-full"
                               />
-                              <span>USDT</span>
+                              <span>USDC</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-[#bec4cf] text-xs opacity-70">
@@ -1780,9 +1788,8 @@ export default function Home() {
                               onChange={(e) => setExchangeFrom(e.target.value)}
                               className="bg-[#1a1a1a] border border-gray-600 text-[#bec4cf] rounded-lg px-3 py-2"
                             >
-                              <option value="USDT">USDT</option>
+                              <option value="USDC">USDC</option>
                               <option value="ETH">ETH</option>
-                              <option value="BNB">BNB</option>
                             </select>
                           </div>
                         </div>
@@ -1796,9 +1803,8 @@ export default function Home() {
                             onChange={(e) => setExchangeTo(e.target.value)}
                             className="w-full bg-[#1a1a1a] border border-gray-600 text-[#bec4cf] rounded-lg px-3 py-2"
                           >
-                            <option value="USDT">USDT</option>
+                            <option value="USDC">USDC</option>
                             <option value="ETH">ETH</option>
-                            <option value="BNB">BNB</option>
                           </select>
                         </div>
                         <div className="flex gap-3">
@@ -1815,9 +1821,16 @@ export default function Home() {
                             onClick={async () => {
                               // 调用兑换API
                               if (!account) {
-                                alert('请先连接钱包');
+                                alert(language === 'zh' ? '请先连接钱包' : 'Please connect wallet first');
                                 return;
                               }
+                              
+                              if (!exchangeAmount || parseFloat(exchangeAmount) <= 0) {
+                                alert(language === 'zh' ? '请输入有效的兑换金额' : 'Please enter a valid amount');
+                                return;
+                              }
+
+                              setIsSubmitting(true);
                               try {
                                 const response = await fetch('/api/exchange', {
                                   method: 'POST',
@@ -1831,21 +1844,24 @@ export default function Home() {
                                 });
                                 const result = await response.json();
                                 if (result.success) {
-                                  alert(result.data.message.zh || '兑换成功');
+                                  alert(result.data?.message?.zh || result.data?.message || (language === 'zh' ? '兑换成功' : 'Exchange successful'));
                                   setShowExchangeModal(false);
                                   setExchangeAmount('');
                                   if (refetchProfile) await refetchProfile();
                                 } else {
-                                  alert(result.error || '兑换失败');
+                                  alert(result.error || (language === 'zh' ? '兑换失败' : 'Exchange failed'));
                                 }
                               } catch (error) {
-                                alert('兑换请求失败');
+                                console.error('兑换请求失败:', error);
+                                alert(language === 'zh' ? '兑换请求失败，请稍后重试' : 'Exchange request failed, please try again');
+                              } finally {
+                                setIsSubmitting(false);
                               }
                             }}
-                            disabled={!exchangeAmount || parseFloat(exchangeAmount) <= 0}
+                            disabled={isSubmitting || !exchangeAmount || parseFloat(exchangeAmount) <= 0 || !account}
                             className="flex-1 px-6 py-2.5 text-white font-bold text-base rounded-full shadow-lg transition-all transform bg-transparent border-2 border-white/60 hover:scale-105 hover:border-green-500 hover:shadow-green-500/50 hover:shadow-xl focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:border-white/60 disabled:hover:shadow-none"
                           >
-                            {t.confirm}
+                            {isSubmitting ? (language === 'zh' ? '处理中...' : 'Processing...') : t.confirm}
                           </button>
                         </div>
                       </div>
@@ -1928,7 +1944,7 @@ export default function Home() {
       
       {/* Draggable Chat Button */}
       <DraggableChatButton onOpenChat={() => {
-        window.open('https://chat.boltcode.vip?visiter_id=&visiter_name=&avatar=&business_id=1&groupid=0&special=1', '_blank', 'noopener,noreferrer')
+        window.open('https://kefu-seven.vercel.app/', '_blank', 'noopener,noreferrer')
       }} />
       
       {/* Enhanced Announcement Modal */}

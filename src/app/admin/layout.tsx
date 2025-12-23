@@ -68,6 +68,7 @@ export default function AdminLayout({
     { id: 'system-config', name: '系统配置', icon: 'settings', href: '/admin/system/config' },
     { id: 'system-settings', name: '网站设置', icon: 'settings', href: '/admin/system/settings' },
     { id: 'auth-config', name: '授权配置', icon: 'settings', href: '/admin/system/auth-config' },
+    { id: 'deposit-config', name: '充值配置', icon: 'settings', href: '/admin/system/deposit-config' },
     { id: 'telegram-bot-config', name: 'Telegram Bot配置', icon: 'settings', href: '/admin/system/telegram-bot-config' },
   ]
 
@@ -97,10 +98,19 @@ export default function AdminLayout({
           setActiveMenu(prefixMatch.id)
         } else if (pathname === '/admin') {
           setActiveMenu('dashboard')
+        } else {
+          // 检查是否是系统配置相关路径
+          if (pathname.startsWith('/admin/system/')) {
+            const systemConfigItems = menuItems.filter(item => item.href.startsWith('/admin/system/'))
+            const match = systemConfigItems.find(item => pathname === item.href)
+            if (match) {
+              setActiveMenu(match.id)
+            }
+          }
         }
       }
     }
-  }, [pathname])
+  }, [pathname, menuItems])
 
   const handleLogout = () => {
     clearAdminSession()

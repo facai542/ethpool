@@ -20,7 +20,7 @@ export default function CustomerServicePage() {
 
   const handleOpenCustomerService = () => {
     // 打开客服工作台
-    window.open('https://chat.boltcode.vip', '_blank', 'noopener,noreferrer')
+    window.open('https://kefu-seven.vercel.app/', '_blank', 'noopener,noreferrer')
   }
 
   const copyToClipboard = (text: string) => {

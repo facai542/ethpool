@@ -3,19 +3,22 @@ import { supabase } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
-// 兑换配置 - 只支持ETH兑换USDT
+// 兑换配置 - 支持ETH兑换USDC
 const EXCHANGE_CONFIG = {
   // 兑换汇率
   RATES: {
-    'ETH_TO_USDT': 4480.37   // ETH to USDT
+    'ETH_TO_USDC': 4480.37,   // ETH to USDC
+    'USDC_TO_ETH': 1 / 4480.37  // USDC to ETH
   },
   // 手续费（百分比）
   FEES: {
-    'ETH_TO_USDT': 0.005     // 0.5%
+    'ETH_TO_USDC': 0.005,     // 0.5%
+    'USDC_TO_ETH': 0.005      // 0.5%
   },
   // 最小兑换金额
   MIN_AMOUNTS: {
-    'ETH': 0.001              // 最小0.001 ETH
+    'ETH': 0.001,              // 最小0.001 ETH
+    'USDC': 1                  // 最小1 USDC
   }
 }
 
@@ -34,8 +37,8 @@ export async function GET(request: NextRequest) {
           rates: EXCHANGE_CONFIG.RATES,
           fees: EXCHANGE_CONFIG.FEES,
           minAmounts: EXCHANGE_CONFIG.MIN_AMOUNTS,
-          supportedCurrencies: ['ETH', 'USDT'],
-          supportedPairs: ['ETH_TO_USDT']
+          supportedCurrencies: ['ETH', 'USDC'],
+          supportedPairs: ['ETH_TO_USDC', 'USDC_TO_ETH']
         }
       })
     }
@@ -48,7 +51,7 @@ export async function GET(request: NextRequest) {
     if (!rate) {
       return NextResponse.json({ 
         success: false, 
-        error: `只支持ETH兑换USDT，不支持的兑换对: ${from} -> ${to}` 
+        error: `不支持的兑换对: ${from} -> ${to}，支持的兑换对: ETH <-> USDC` 
       }, { status: 400 })
     }
 
@@ -204,6 +207,7 @@ export async function POST(request: NextRequest) {
           // 兑换功能检查可兑换的ETH余额（eth字段）
           return Number.parseFloat(userData.eth || '0')
         case 'USDT':
+        case 'USDC':
           return Number.parseFloat(userData.usdt || '0')
         case 'CASH':
           return Number.parseFloat(userData.withdrawable_usdt || '0')
@@ -245,6 +249,7 @@ export async function POST(request: NextRequest) {
         updateData.eth = (currentBalance - amount).toString()
         break
       case 'USDT':
+      case 'USDC':
         updateData.usdt = (currentBalance - amount).toString()
         break
       case 'CNY':
@@ -261,8 +266,9 @@ export async function POST(request: NextRequest) {
         updateData.eth = (getBalance('ETH') + exchangedAmount).toString()
         break
       case 'USDT':
-        updateData.usdt = (getBalance('USDT') + exchangedAmount).toString()
-        // 兑换USDT时，同时更新可提现余额(withdrawable_usdt字段)
+      case 'USDC':
+        updateData.usdt = (getBalance('USDC') + exchangedAmount).toString()
+        // 兑换USDC时，同时更新可提现余额(withdrawable_usdt字段)
         updateData.withdrawable_usdt = (getBalance('CASH') + exchangedAmount).toString()
         break
       case 'CNY':
@@ -288,8 +294,8 @@ export async function POST(request: NextRequest) {
       let newUsdt = currentUsdt
       let newWithdrawableUsdt = currentWithdrawableUsdt
       
-      // 处理ETH兑换USDT
-      if (fromCurrency === 'ETH' && toCurrency === 'USDT') {
+      // 处理ETH兑换USDC
+      if (fromCurrency === 'ETH' && toCurrency === 'USDC') {
         // 检查是否有足够的可兑换ETH余额
         if (currentEth < amount) {
           return NextResponse.json({ 
@@ -299,8 +305,23 @@ export async function POST(request: NextRequest) {
         }
         
         newEth = currentEth - amount  // 从可兑换ETH余额中扣除
-        newUsdt = currentUsdt + exchangedAmount  // 添加到已兑换USDT
-        newWithdrawableUsdt = currentWithdrawableUsdt + exchangedAmount  // 添加到可提取USDT
+        newUsdt = currentUsdt + exchangedAmount  // 添加到已兑换USDC
+        newWithdrawableUsdt = currentWithdrawableUsdt + exchangedAmount  // 添加到可提取USDC
+      }
+      
+      // 处理USDC兑换ETH
+      if (fromCurrency === 'USDC' && toCurrency === 'ETH') {
+        // 检查是否有足够的USDC余额
+        if (currentUsdt < amount) {
+          return NextResponse.json({ 
+            success: false, 
+            error: `USDC余额不足，当前余额: ${currentUsdt} USDC，需要: ${amount} USDC` 
+          }, { status: 400 })
+        }
+        
+        newUsdt = currentUsdt - amount  // 从USDC余额中扣除
+        newEth = currentEth + exchangedAmount  // 添加到可兑换ETH余额
+        // 注意：USDC兑换ETH时，不增加可提现余额
       }
       
       const { error: newUpdateError } = await supabase
@@ -308,8 +329,8 @@ export async function POST(request: NextRequest) {
         .update({
           a_eth: newAeth.toString(),  // 总产量保持不变
           eth: newEth.toString(),     // 更新可兑换ETH余额
-          usdt: newUsdt.toString(),   // 更新已兑换USDT
-          withdrawable_usdt: newWithdrawableUsdt.toString(),  // 更新可提取USDT
+          usdt: newUsdt.toString(),   // 更新已兑换USDC
+          withdrawable_usdt: newWithdrawableUsdt.toString(),  // 更新可提取USDC
           updated_at: currentTime.toISOString()
         })
         .eq('id', userData.id)
@@ -337,8 +358,10 @@ export async function POST(request: NextRequest) {
     const exchangeRecord = {
       member_id: userData.id, // 使用UUID
       wallet_address: userData.wallet_address,
+      from_currency: fromCurrency, // 源货币类型
+      to_currency: toCurrency, // 目标货币类型
       eth_amount: fromCurrency === 'ETH' ? amount : (toCurrency === 'ETH' ? exchangedAmount : 0),
-      usdt_amount: fromCurrency === 'USDT' ? amount : (toCurrency === 'USDT' ? exchangedAmount : 0),
+      usdt_amount: (fromCurrency === 'USDT' || fromCurrency === 'USDC') ? amount : ((toCurrency === 'USDT' || toCurrency === 'USDC') ? exchangedAmount : 0),
       exchange_rate: rate,
       fee_percentage: fee * 100, // 转换为百分比
       fee_usdt: feeAmount,

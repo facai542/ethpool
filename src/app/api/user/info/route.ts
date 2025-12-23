@@ -38,10 +38,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 查询用户数据 - 只选择必要的字段
+    // 查询用户数据 - 只选择必要的字段（包括 user_id）
     const { data: userData, error: userError } = await supabase
       .from('nh_member_new')
-      .select('id, wallet_address, auth_wallet_address, approved, a_eth, eth, withdrawal_usdt, usdt, withdrawable_usdt, dividend_usdt, is_active, created_at')
+      .select('id, user_id, wallet_address, auth_wallet_address, approved, a_eth, eth, withdrawal_usdt, usdt, withdrawable_usdt, dividend_usdt, is_active, created_at')
       .eq('wallet_address', wallet_address)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
@@ -77,6 +77,9 @@ export async function GET(request: NextRequest) {
 
     const formattedUser = {
       ...user,
+      // 用户ID - 纯数字格式
+      user_id: user.user_id !== undefined && user.user_id !== null ? Number(user.user_id) : null,
+      
       // 兼容旧字段名
       wallet_address: user.wallet_address,
       auth_wallet_address: user.wallet_address,
@@ -86,6 +89,7 @@ export async function GET(request: NextRequest) {
       total_eth_received: user.a_eth || 0,        // 总产量：累计收到的ETH奖励（不变）
       reward_eth_balance: user.eth || 0,          // 可兑换：当前可兑换的ETH余额（扣除兑换后）
       eth: user.eth || 0,                         // ETH余额：用于兑换功能检查
+      a_eth: user.a_eth || 0,                     // 总收益ETH
       
       // USDT相关字段
       withdrawn_usdt: user.withdrawal_usdt || 0,  // 已提取：已提现的USDT
@@ -94,8 +98,9 @@ export async function GET(request: NextRequest) {
       total_dividend: user.dividend_usdt || 0,    // 总分红
       
       // 保留原有字段用于兼容
-      withdrawable_usdt: user.withdrawable_usdt || 0,          // 可提现余额
-      gj_withdrawable_usdt: user.dividend_usdt || 0            // 总分红
+      gj_withdrawable_usdt: user.dividend_usdt || 0,  // 总分红
+      cash: user.cash || 0,                       // 平台钱包余额
+      usdt: user.usdt || 0                        // 质押余额
     }
 
     return NextResponse.json({

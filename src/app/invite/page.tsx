@@ -51,9 +51,11 @@ export default function InvitePage() {
     fetchInviteData();
   }, [address]);
 
-  // 生成邀请链接（如果没有数据，使用默认值）
+  // 生成邀请链接（根据前端当前域名动态生成）
   const inviteCode = inviteData?.referralCode || '';
-  const inviteLink = inviteData?.referralLink || (typeof window !== 'undefined' ? `${window.location.origin}?ref=${inviteCode}` : '');
+  const inviteLink = typeof window !== 'undefined' 
+    ? `${window.location.origin}?ref=${inviteCode}` 
+    : '';
 
   // 统计数据（适配InviteStats组件的格式）
   const stats = inviteData ? {

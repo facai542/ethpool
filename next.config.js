@@ -51,6 +51,16 @@ const nextConfig = {
       '@': path.resolve(__dirname, 'src'),
     };
     
+    // 为 pino 和 React Native 模块提供 mock（客户端和服务器端都需要）
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'pino': path.resolve(__dirname, 'src/lib/pino-browser.js'),
+      'pino-pretty': false,
+      'thread-stream': false,
+      '@react-native-async-storage/async-storage': false,
+      'react-native': false,
+    };
+    
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -59,16 +69,6 @@ const nextConfig = {
         tls: false,
         crypto: false,
       }
-      
-      // 为 pino 和 React Native 模块提供浏览器端 mock（客户端专用）
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        'pino': path.resolve(__dirname, 'src/lib/pino-browser.js'),
-        'pino-pretty': false,
-        'thread-stream': false,
-        '@react-native-async-storage/async-storage': false,
-        'react-native': false,
-      };
     }
    
     if (isServer) {

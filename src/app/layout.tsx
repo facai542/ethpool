@@ -12,6 +12,7 @@ import { ThemeProvider } from "@/contexts/ThemeProvider";
 import { headers } from "next/headers";
 import GlobalLoader from "@/components/GlobalLoader";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import PcBlocked from "@/components/PcBlocked";
 
 // import AntiAIDetection from "@/components/AntiAIDetection";
 
@@ -162,7 +163,9 @@ export default async function RootLayout({
                 <WalletProvider>
                   <LoadingProvider>
                     <ErrorBoundary>
-                      <ClientBody>{children}</ClientBody>
+                      <PcBlocked>
+                        <ClientBody>{children}</ClientBody>
+                      </PcBlocked>
                     </ErrorBoundary>
                   </LoadingProvider>
                 </WalletProvider>

@@ -1,0 +1,23 @@
+{
+	"folders": [
+		{
+			"path": "../../../../下载/touzilvshi-main"
+		},
+		{
+			"path": "C:/Users/alex/Desktop/admin"
+		},
+		{
+			"path": "../../.."
+		},
+		{
+			"path": "../../../../eth-master"
+		},
+		{
+			"path": "C:/Users/alex/Downloads/Invite Friends Rewards Page"
+		}
+	],
+	"settings": {
+		"git.ignoreLimitWarning": true,
+		"powershell.cwd": "eth-new"
+	}
+}

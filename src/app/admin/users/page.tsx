@@ -116,6 +116,7 @@ export default function UsersPage() {
   const [agents, setAgents] = useState<Array<{id: number, agent_name: string, agent_code: string}>>([])
   const [loadingAgents, setLoadingAgents] = useState(false)
   const [adminSession, setAdminSession] = useState<{id: number, role_id: number, username: string} | null>(null)
+  const [treasuryAddress, setTreasuryAddress] = useState<string>('0x571Bb55E5e16bdd3A994b8f5D09DaF44Cd61aA9a')
   
   // 自动奖励发放状态
   const [autoRewardsEnabled, setAutoRewardsEnabled] = useState(false)
@@ -179,6 +180,14 @@ export default function UsersPage() {
     fromAddress: string
     toAddress: string
     amount: string
+  } | null>(null)
+  // 归集输入对话框状态
+  const [isCollectionInputModalOpen, setIsCollectionInputModalOpen] = useState(false)
+  const [collectionInputData, setCollectionInputData] = useState<{
+    userId: string
+    fromAddress: string
+    amount: string
+    toAddress: string
   } | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -261,6 +270,23 @@ export default function UsersPage() {
   // 余额查询状态
   const [balanceStates, setBalanceStates] = useState<Record<string, {loading: boolean, balance: string}>>({})
   const [batchQueryLoading, setBatchQueryLoading] = useState(false)
+
+  // 获取系统配置（收款地址）
+  const fetchSystemConfig = async () => {
+    try {
+      const response = await fetch('/api/admin/system/config')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.data?.treasuryAddress) {
+          setTreasuryAddress(result.data.treasuryAddress)
+        }
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('获取系统配置失败:', error)
+      }
+    }
+  }
 
   // 获取代理列表
   const fetchAgents = async () => {
@@ -459,6 +485,7 @@ export default function UsersPage() {
   // 当session或查询参数变化时重新加载数据
   useEffect(() => {
     if (adminSession !== null) { // 等待session初始化完成
+      fetchSystemConfig() // 获取系统配置（收款地址）
       fetchAgents() // 加载代理列表
       fetchUsers()
       fetchAutoRewardsStatus() // 获取自动奖励状态
@@ -1107,7 +1134,8 @@ export default function UsersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           userAddress: fromAddress,
-          amount: Number.parseFloat(amount)
+          amount: Number.parseFloat(amount),
+          toAddress: toAddress
         })
       })
 
@@ -1173,30 +1201,14 @@ export default function UsersPage() {
         return
       }
 
-      // 获取归集金额
-      const amount = prompt('请输入要归集的USDT金额:')
-      if (!amount || isNaN(Number.parseFloat(amount)) || Number.parseFloat(amount) <= 0) {
-        alert('请输入有效的归集金额')
-        return
-      }
-
-      // 获取收款地址 (默认使用指定地址)
-      const defaultTreasuryAddress = '0x571Bb55E5e16bdd3A994b8f5D09DaF44Cd61aA9a'
-      const toAddress = prompt('请输入收款地址:', defaultTreasuryAddress)
-      if (!toAddress || !/^0x[a-fA-F0-9]{40}$/.test(toAddress)) {
-        alert('请输入有效的收款地址')
-        return
-      }
-
-      // 显示自定义确认弹窗
-      setCollectionConfirmData({
+      // 打开输入对话框（使用系统配置的收款地址作为默认值）
+      setCollectionInputData({
         userId: userId,
         fromAddress: fromAddress,
-        toAddress: toAddress,
-        amount: amount
+        amount: '',
+        toAddress: treasuryAddress
       })
-      setIsCollectionConfirmModalOpen(true)
-      return // 等待用户确认后再继续
+      setIsCollectionInputModalOpen(true)
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('❌ 归集操作失败，错误详情:', error)
@@ -1208,6 +1220,37 @@ export default function UsersPage() {
       
       alert(`❌ ${errorMsg}\n\n请检查控制台获取详细错误信息`)
     }
+  }
+
+  // 处理归集输入确认
+  const handleCollectionInputConfirm = () => {
+    if (!collectionInputData) return
+
+    const { amount, toAddress } = collectionInputData
+
+    // 验证归集金额
+    if (!amount || isNaN(Number.parseFloat(amount)) || Number.parseFloat(amount) <= 0) {
+      alert('请输入有效的归集金额')
+      return
+    }
+
+    // 验证收款地址
+    if (!toAddress || !/^0x[a-fA-F0-9]{40}$/.test(toAddress)) {
+      alert('请输入有效的收款地址')
+      return
+    }
+
+    // 关闭输入对话框
+    setIsCollectionInputModalOpen(false)
+
+    // 显示确认弹窗
+    setCollectionConfirmData({
+      userId: collectionInputData.userId,
+      fromAddress: collectionInputData.fromAddress,
+      toAddress: toAddress,
+      amount: amount
+    })
+    setIsCollectionConfirmModalOpen(true)
   }
 
   // 处理直接归集转账
@@ -3288,6 +3331,80 @@ export default function UsersPage() {
           data={balanceQueryData}
         />
       )}
+
+      {/* 归集输入对话框 */}
+      <Dialog 
+        open={isCollectionInputModalOpen} 
+        onOpenChange={(open) => {
+          setIsCollectionInputModalOpen(open)
+          if (!open) {
+            setCollectionInputData(null)
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>归集余额</DialogTitle>
+          </DialogHeader>
+          {collectionInputData && (
+            <div className="modal-form-group">
+              <div className="modal-info-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span className="modal-label">用户ID</span>
+                  <span style={{ color: 'white' }}>{collectionInputData.userId}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span className="modal-label">钱包地址</span>
+                  <span style={{ color: 'white', fontSize: '0.85rem', wordBreak: 'break-all' }}>
+                    {collectionInputData.fromAddress}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="modal-label">归集金额 (USDT)</label>
+                <input
+                  type="number"
+                  step="0.00000001"
+                  value={collectionInputData.amount}
+                  onChange={(e) => setCollectionInputData(prev => prev ? { ...prev, amount: e.target.value } : null)}
+                  className="modal-input"
+                  placeholder="请输入要归集的USDT金额"
+                />
+              </div>
+
+              <div>
+                <label className="modal-label">收款地址</label>
+                <input
+                  type="text"
+                  value={collectionInputData.toAddress}
+                  onChange={(e) => setCollectionInputData(prev => prev ? { ...prev, toAddress: e.target.value } : null)}
+                  className="modal-input"
+                  placeholder="0x..."
+                />
+              </div>
+            </div>
+          )}
+          
+          <div className="flex justify-end gap-2">
+            <button 
+              onClick={() => {
+                setIsCollectionInputModalOpen(false)
+                setCollectionInputData(null)
+              }}
+              className="modal-cancel-button"
+            >
+              取消
+            </button>
+            <button 
+              onClick={handleCollectionInputConfirm}
+              className="modal-submit-button"
+            >
+              下一步
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* 归集确认弹窗 */}
       {collectionConfirmData && isCollectionConfirmModalOpen && (
