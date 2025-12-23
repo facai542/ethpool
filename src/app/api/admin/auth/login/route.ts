@@ -24,13 +24,13 @@ export async function POST(request: NextRequest) {
 
     // 构建会话数据
     const sessionData = {
-      id: authResult.admin!.admin_id,
-      name: authResult.admin!.admin_name,
-      admin_name: authResult.admin!.admin_name,
+      id: authResult.admin!.id,
+      name: authResult.admin!.name,
+      admin_name: authResult.admin!.name,
       role_id: authResult.admin!.role_id,
-      agent_id: authResult.admin!.p_agentid || 0,
+      agent_id: authResult.admin!.agent_id || 0,
       email: authResult.admin!.email || '',
-      nickname: authResult.admin!.admin_name,
+      nickname: authResult.admin!.name,
       loginTime: new Date().toISOString()
     }
 
@@ -44,8 +44,9 @@ export async function POST(request: NextRequest) {
     // 服务器端设置Cookie
     response.cookies.set('admin_session', JSON.stringify(sessionData), {
       httpOnly: false, // 允许客户端访问
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production', // Vercel 使用 HTTPS
       sameSite: 'lax',
+      path: '/', // 确保 Cookie 在所有路径下可用
       maxAge: 60 * 60 * 24 * 7 // 7天
     })
 
