@@ -2069,6 +2069,15 @@ body {
   padding: 0 !important;
 }
 
+/* Next.js DevTools Portal 样式覆盖 */
+nextjs-portal,
+nextjs-portal[style*="left"],
+nextjs-portal[style*="top"] {
+  left: unset !important;
+  top: unset !important;
+  position: relative !important;
+}
+
 @theme inline {
   --color-card: var(--card);
   --color-ring: var(--ring);

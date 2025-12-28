@@ -17,7 +17,6 @@ import { FramedCard } from '@/components/FramedCard'
 import { AnimatedTabs } from '@/components/ui/animated-tabs'
 
 import { StakingCardButton } from '@/components/StakingCardButton'
-import ActivityCard from '@/components/ActivityCard'
 
 import { useUserProfile } from '@/hooks/useData'
 import { useI18n } from '@/contexts/I18nContext'
@@ -634,7 +633,7 @@ export default function Home() {
 
       {/* 全球挖矿网络地图 */}
       {/* 地图组件顶部的标题 */}
-      <section className="px-4 py-8 bg-black text-center">
+      <section className="px-4 py-4 md:py-6 bg-black text-center">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
             {t.globalLiquidityMiningNetwork}
@@ -700,8 +699,8 @@ export default function Home() {
       </ContainerScroll>
 
       {/* 切换栏 - 矿池/账户 */}
-      <section className="px-3 md:px-4 bg-black">
-        <div className="max-w-4xl mx-auto mb-6">
+      <section className="px-3 md:px-4 bg-black mt-8 md:mt-12 mb-6 md:mb-8">
+        <div className="max-w-4xl mx-auto">
           <AnimatedTabs 
             tabs={[
               { label: t.miningPool, value: 'miningPool' },
@@ -775,8 +774,8 @@ export default function Home() {
       {activeHomeTab === 'account' && (
         <>
           {/* 我的账户页面 */}
-          <section className="px-3 md:px-4 bg-black min-h-screen relative z-10">
-            <div className="max-w-4xl mx-auto pt-2 pb-0">
+          <section className="px-3 md:px-4 bg-black relative z-10">
+            <div className="max-w-4xl mx-auto pt-2 pb-4">
               {/* 带边框的账户信息区域 */}
               <div className="binance-frame flex min-h-[500px]">
                 {/* 左侧边框 */}
@@ -922,15 +921,8 @@ export default function Home() {
             </div>
           </section>
 
-          {/* 活动卡片 */}
-          <section className="px-3 md:px-4 bg-black -mt-32 relative z-10" style={{ transform: 'translateY(-50px)' }}>
-            <div className="max-w-4xl mx-auto">
-              <ActivityCard userAddress={account} className="mb-6" />
-            </div>
-          </section>
-
           {/* 兑换提取记录分类栏 */}
-          <section className="px-3 md:px-4 bg-black mt-8 md:mt-8 relative z-20">
+          <section className="px-3 md:px-4 bg-black mt-4 md:mt-6 relative z-20">
             <div className="max-w-4xl mx-auto">
               <div className="mb-2">
                 {/* 分类标签栏 */}

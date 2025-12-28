@@ -90,7 +90,12 @@ export const setupMobileErrorSuppression = (): void => {
     'WebKit appearance',
     'iOS Safari',
     'Mobile Safari',
-    'Chrome Mobile'
+    'Chrome Mobile',
+    // Next.js 15 动态 API 警告
+    'searchParams.*should be unwrapped',
+    'params.*should be unwrapped',
+    'The keys of.*were accessed directly',
+    'are being enumerated'
   ]
   
   console.error = (...args) => {

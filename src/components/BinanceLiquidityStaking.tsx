@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { GlowingEffect } from '@/components/ui/glowing-effect';
 import { TrendingUp, TrendingDown, Wallet, Lock, Unlock, Info, Star, Clock, DollarSign } from 'lucide-react';
 import { RouteIcon } from '@/components/ui/route-icon';
+import { EthUsdtSwapCard } from '@/components/ui/eth-usdt-swap-card';
 import { useI18n } from '@/contexts/I18nContext';
 import { useWallet } from '@/contexts/WalletContext';
 import {
@@ -309,11 +310,10 @@ const BinanceLiquidityStaking: React.FC<BinanceLiquidityStakingProps> = ({ userE
     }
   };
 
+  const [isEthOnTop, setIsEthOnTop] = useState(true);
+
   const handleSwapCurrencies = () => {
-    const tempEth = ethAmount;
-    const tempUsdt = usdtAmount;
-    setEthAmount(tempUsdt);
-    setUsdtAmount(tempEth);
+    setIsEthOnTop(!isEthOnTop);
   };
 
   // 处理兑换操作
@@ -415,97 +415,20 @@ const BinanceLiquidityStaking: React.FC<BinanceLiquidityStakingProps> = ({ userE
   return (
     <div className="space-y-6">
       {/* 兑换卡片 */}
-      <div className="relative bg-gray-900 rounded-xl p-6">
-            {/* 汇率显示和全部兑换按钮 */}
-            <div className="flex justify-between items-center mb-6">
-              <div className="text-center text-yellow-400 text-sm flex-1">
-                Exchange 1ETH={exchangeRate}USDT
-              </div>
-              <button 
-                className="text-red-500 rounded px-3 py-1 hover:bg-red-500 hover:text-white transition-colors text-sm"
-                onClick={handleExchangeAll}
-              >
-                Exchange All
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              {/* ETH输入框 */}
-              <div className="flex items-center gap-3 bg-white rounded-lg p-4">
-                <img 
-                  src="/1.png" 
-                  alt="ETH" 
-                  className="w-8 h-8 rounded-full flex-shrink-0"
-                />
-                <span className="text-black text-sm font-medium flex-shrink-0">ETH</span>
-                <div className="flex-1 flex items-center justify-end">
-                  <input 
-                    type="number" 
-                    placeholder="0" 
-                    value={ethAmount}
-                    onChange={(e) => handleEthAmountChange(e.target.value)}
-                    className="bg-transparent text-black text-right outline-none w-full font-bold text-lg" 
-                  />
-                </div>
-              </div>
-
-              {/* 交换按钮 */}
-              <div className="flex justify-center">
-                <div 
-                  onClick={handleSwapCurrencies}
-                  className="text-yellow-500 hover:text-yellow-400 transition-colors cursor-pointer"
-                  title="Swap Currencies"
-                  style={{ 
-                    backgroundColor: 'transparent !important', 
-                    border: 'none !important', 
-                    padding: '0 !important', 
-                    margin: '0 !important',
-                    background: 'none !important',
-                    boxShadow: 'none !important',
-                    outline: 'none !important'
-                  }}
-                >
-                  <RouteIcon 
-                    size={32} 
-                    className="!bg-transparent"
-                    style={{
-                      backgroundColor: 'transparent !important',
-                      background: 'none !important',
-                      border: 'none !important',
-                      boxShadow: 'none !important'
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* USDT输入框 */}
-              <div className="flex items-center gap-3 bg-white rounded-lg p-4">
-                <img 
-                  src="/2.png" 
-                  alt="USDT" 
-                  className="w-8 h-8 rounded-full flex-shrink-0"
-                />
-                <span className="text-black text-sm font-medium flex-shrink-0">USDT</span>
-                <div className="flex-1 flex items-center justify-end">
-                  <input 
-                    type="number" 
-                    placeholder="0" 
-                    value={usdtAmount}
-                    onChange={(e) => handleUsdtAmountChange(e.target.value)}
-                    className="bg-transparent text-black text-right outline-none w-full font-bold text-lg" 
-                  />
-                </div>
-              </div>
-
-              {/* 兑换按钮 */}
-              <Button 
-                className="w-full bg-yellow-500 hover:bg-yellow-600 text-black py-3 rounded-lg font-bold"
-                disabled={!ethAmount && !usdtAmount || isStaking}
-                onClick={handleExchange}
-              >
-                {isStaking ? 'Processing...' : 'Exchange'}
-              </Button>
-            </div>
+      <div className="relative rounded-xl p-6" style={{ backgroundColor: '#0A0A0A' }}>
+        <EthUsdtSwapCard
+          ethAmount={ethAmount}
+          usdtAmount={usdtAmount}
+          exchangeRate={exchangeRate}
+          onEthAmountChange={handleEthAmountChange}
+          onUsdtAmountChange={handleUsdtAmountChange}
+          onSwap={handleExchange}
+          onSwapPosition={handleSwapCurrencies}
+          isEthOnTop={isEthOnTop}
+          isLoading={isStaking}
+          userEthBalance={userEthBalance}
+          onExchangeAll={handleExchangeAll}
+        />
       </div>
     </div>
   );

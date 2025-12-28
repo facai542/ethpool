@@ -109,8 +109,48 @@ export default async function RootLayout({
               -ms-user-select: text;
               user-select: text;
             }
+            
+            /* Next.js DevTools Portal 样式覆盖 */
+            nextjs-portal {
+              left: unset !important;
+              top: unset !important;
+            }
           `
         }} />
+        <Script
+          id="remove-nextjs-portal-styles"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                function removePortalStyles() {
+                  const portals = document.querySelectorAll('nextjs-portal');
+                  portals.forEach(portal => {
+                    if (portal.style) {
+                      portal.style.removeProperty('left');
+                      portal.style.removeProperty('top');
+                    }
+                  });
+                }
+                
+                // 立即执行
+                removePortalStyles();
+                
+                // 监听 DOM 变化，处理动态添加的 portal
+                const observer = new MutationObserver(removePortalStyles);
+                observer.observe(document.body, {
+                  childList: true,
+                  subtree: true
+                });
+                
+                // 延迟执行，确保所有元素都已加载
+                setTimeout(removePortalStyles, 100);
+                setTimeout(removePortalStyles, 500);
+                setTimeout(removePortalStyles, 1000);
+              })();
+            `
+          }}
+        />
       </head>
       <body suppressHydrationWarning className="antialiased bg-black">
         {/* <AntiAIDetection /> */}

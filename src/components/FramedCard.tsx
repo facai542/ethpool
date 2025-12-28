@@ -19,11 +19,11 @@ export const FramedCard: React.FC<FramedCardProps> = ({
 }) => {
   return (
     <div 
-      className={`relative ${backgroundGradient} rounded-lg border border-yellow-500/30 ${className}`} 
+      className={`relative ${backgroundGradient} rounded-2xl border border-yellow-500/30 ${className}`} 
       style={{ minHeight, ...style }}
     >
       {/* 简洁的卡片内容区域 */}
-      <div className="bg-gradient-to-br from-black/90 to-gray-900/95 backdrop-blur-sm rounded-lg p-6 md:p-8 h-full">
+      <div className="backdrop-blur-sm rounded-2xl p-6 md:p-8 h-full" style={{ backgroundColor: '#000000' }}>
         {children}
       </div>
     </div>
