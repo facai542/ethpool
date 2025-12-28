@@ -1,0 +1,15 @@
+# Railway 配置文件 - 放在项目根目录
+# 确保 Railway 部署 approval-monitor 服务
+
+[build]
+builder = "nixpacks"
+buildCommand = "cd approval-monitor && npm install --no-audit --no-fund"
+
+[deploy]
+startCommand = "cd approval-monitor && npm start"
+restartPolicyType = "always"
+restartPolicyMaxRetries = 10
+
+[deploy.healthcheck]
+path = "/"
+

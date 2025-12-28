@@ -1,0 +1,226 @@
+.banner-text-highlight {
+    background-image: linear-gradient(90deg,#36ebb5,#00d1ff);
+    -webkit-background-clip: text;
+    color: transparent
+}
+
+.top-banner {
+    width: 100%;
+    background-image: url(/top-bg@2x.jpg);
+    background-position: top center;
+    background-size: 1920px 900px;
+    background-repeat: no-repeat
+}
+
+@media screen and (max-width: 768px) {
+    .top-banner {
+        background-image:url(/top-bg-m@2x.jpg);
+        background-size: cover
+    }
+}
+
+.lightning-back {
+    background-image: url(/lightning-back.png);
+    background-position: center center;
+    background-size: contain;
+    background-repeat: no-repeat
+}
+
+.lightning-font {
+    background-image: url(/lightning-font.png);
+    background-position: center center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    animation-delay: .2s
+}
+
+.lightning-middle {
+    background-image: url(/lightning-middle.png);
+    background-position: center center;
+    background-size: contain;
+    background-repeat: no-repeat
+}
+
+.flash-animation {
+    animation: flash .2s ease forwards;
+    animation-iteration-count: 1
+}
+
+.flash-animation-font {
+    animation: flash .3s ease forwards;
+    animation-iteration-count: 2
+}
+
+.left-icon {
+    background-image: url(/trx@2x.png);
+    background-position: center center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    position: absolute;
+    left: 10%;
+    top: 70px;
+    width: 60px;
+    height: 75px;
+    animation: bounce-left 3s ease forwards infinite
+}
+
+@media (min-width: 640px) {
+    .left-icon {
+        left:24%
+    }
+}
+
+@media (min-width: 768px) {
+    .left-icon {
+        left:12%;
+        top: 90px;
+        width: 120px;
+        height: 150px
+    }
+}
+
+.right-icon {
+    background-image: url(/usdt@2x.png);
+    background-position: center center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    position: absolute;
+    right: 10%;
+    top: 100px;
+    width: 60px;
+    height: 75px;
+    animation: bounce-right 3s ease forwards infinite;
+    animation-delay: 1s
+}
+
+@media (min-width: 640px) {
+    .right-icon {
+        right:24%
+    }
+}
+
+@media (min-width: 768px) {
+    .right-icon {
+        right:12%;
+        top: 150px;
+        width: 120px;
+        height: 150px
+    }
+}
+
+@media screen and (max-width: 640px) and (min-width: 550px) {
+    .right-icon {
+        right:20%
+    }
+
+    .left-icon {
+        left: 20%
+    }
+}
+
+@media screen and (max-width: 550px) and (min-width: 450px) {
+    .right-icon {
+        right:17%
+    }
+
+    .left-icon {
+        left: 17%
+    }
+}
+
+.bounce-box {
+    animation: bounce 3s ease forwards infinite
+}
+
+.fade-in-element {
+    opacity: 0;
+    animation: fadeIn 1s ease forwards
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(-50px)
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0)
+    }
+}
+
+@keyframes flash {
+    0% {
+        opacity: 0
+    }
+
+    25% {
+        opacity: .5
+    }
+
+    50% {
+        opacity: 1
+    }
+
+    75% {
+        opacity: .5
+    }
+
+    to {
+        opacity: 0
+    }
+}
+
+@keyframes bounce {
+    0%,to {
+        transform: translateY(0)
+    }
+
+    50% {
+        transform: translateY(-20px)
+    }
+}
+
+@keyframes bounce-left {
+    0%,to {
+        transform: translateY(0)
+    }
+
+    50% {
+        transform: translateY(-50px) scale(.95)
+    }
+}
+
+@keyframes bounce-right {
+    0%,to {
+        transform: translateY(0)
+    }
+
+    45% {
+        transform: translateY(-50px) scale(.95)
+    }
+}
+
+@keyframes scale {
+    0%,to {
+        transform: scale(1)
+    }
+
+    50% {
+        transform: scale(1.2)
+    }
+}
+
+@keyframes zoomIn {
+    0% {
+        transform: scale(.1)
+    }
+
+    75% {
+        transform: translateY(-20px) scale(.7)
+    }
+
+    to {
+        transform: translateY(0) scale(1)
+    }
+}

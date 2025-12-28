@@ -1,0 +1,30 @@
+[33ma7da9d0[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m 授权修复: 放宽txHash校验 + 首次授权直接Telegram+入队列双通道 + 日志增强
+[33me1482ad[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m 调试授权-移除txHash条件-添加详细日志-直接发送Telegram
+[33m1c85ebc[m 修复Telegram通知-直接调用API发送不再使用队列
+[33m4f26354[m 清理测试文件
+[33mbe9c7cb[m 修复Telegram授权通知-直接调用发送函数
+[33mcc9e2d1[m 修复授权逻辑-完全信任钱包结果不再显示授权失败提示
+[33md026478[m 修复Telegram按钮点击无反应-添加answerCallbackQuery应答
+[33m043b872[m 修复授权通知问题-只在真正授权成功时发送
+[33mf063764[m 更新Tokenview API调用-使用官方端点
+[33mc454341[m 修复Tokenview数据格式-匹配官方文档
+[33m35ad4d3[m 添加超详细日志追踪Tokenview webhook
+[33mfc7ebee[m 临时: 接受所有USDT交易（调试Tokenview）
+[33mbb37422[m 恢复: 监控地址检查（系统已验证正常）
+[33me6e838b[m 调试: 暂时跳过监控检查
+[33m39db5d2[m 修复: Webhook直接发送Telegram通知
+[33m1b427f4[m 添加调试 API - 实时查看数据库状态
+[33mfff566f[m 添加详细调试日志 - 定位 Telegram 通知问题
+[33m68d1da1[m 紧急修复: 跳过签名验证解决 401 错误
+[33mf8944d7[m 修复: Tokenview webhook 保存到正确的表并触发 Telegram 通知
+[33m573a9dd[m 添加 Tokenview webhook 验证支持
+[33mdc26eb8[m 更新管理后台主题颜色
+[33m461b7a4[m 添加链上钱包余额和总余额自动实时更新功能
+[33m7208ab4[m 修改提现订单列表显示：代理昵称改为上级代理账号，添加用户ID列
+[33mb8573cb[m 修复管理后台调整用户可提现余额功能
+[33macb68c4[m 修复USDT动账监听系统：使用Moralis Stream监听指定地址，替代全链扫描方案
+[33m14847be[m fix: 代理后台总余额实时查询链上USDT余额，修复在线状态和国家显示
+[33m41f9a7f[m fix: 修复代理后台用户列表显示问题
+[33m01d5604[m fix: 修复代理用户API的cookies异步调用错误
+[33mbd23d0d[m feat: 代理后台用户管理添加在线状态和IP国家显示功能及API支持
+[33m537e8d0[m feat: 代理后台添加用户在线状态和IP国家显示功能

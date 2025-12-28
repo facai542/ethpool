@@ -1,0 +1,146 @@
+/* 组件样式 */
+.main-container {
+  background-color: #000000;
+}
+
+.header-transform {
+  transform: translateY(8px);
+}
+
+.header-hidden {
+  transform: translateY(8px);
+  visibility: hidden;
+}
+
+/* 流星效果样式 */
+.meteor-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.meteor {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: linear-gradient(45deg, #fff, transparent);
+  border-radius: 50%;
+  animation: meteor-fall linear infinite;
+}
+
+@keyframes meteor-fall {
+  0% {
+    transform: translateY(-100vh) translateX(0);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) translateX(-100px);
+    opacity: 0;
+  }
+}
+
+/* 响应式样式 */
+@media (max-width: 768px) {
+  .mobile-card {
+    padding: 1rem;
+  }
+}
+
+/* 动画效果 */
+.slide-in-up {
+  animation: slideInUp 0.6s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 框架样式 */
+.frame-left-corner {
+  background-image: url('/fragments/frame-left-corner-mobile.svg');
+  background-size: contain;
+}
+
+.frame-right-corner {
+  background-image: url('/fragments/frame-right-corner-mobile.svg');
+  background-size: contain;
+}
+
+.frame-top-left {
+  background-image: url('/fragments/frame-top-left-mobile.svg');
+  background-size: cover;
+}
+
+.frame-top-center {
+  background-image: url('/fragments/frame-top-center-mobile.svg');
+}
+
+.frame-top-right {
+  background-image: url('/fragments/frame-top-right-mobile.svg');
+  background-size: cover;
+}
+
+.frame-bottom-left {
+  background-image: url('/fragments/frame-bottom-left-mobile.svg');
+  background-size: cover;
+}
+
+.frame-bottom-center {
+  background-image: url('/fragments/frame-bottom-center-mobile.svg');
+}
+
+.frame-bottom-right {
+  background-image: url('/fragments/frame-bottom-right-mobile.svg');
+  background-size: cover;
+}
+
+.frame-border-left {
+  border-left: 1px solid rgb(252, 234, 156);
+}
+
+.frame-border-right {
+  border-right: 1px solid rgb(252, 234, 156);
+}
+
+/* 浮动动画 */
+.floating {
+  animation: floating 3s ease-in-out infinite;
+}
+
+.floating-delay-2s {
+  animation: floating 3s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.floating-delay-4s {
+  animation: floating 3s ease-in-out infinite;
+  animation-delay: 4s;
+}
+
+@keyframes floating {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* 记录容器样式 */
+.records-container {
+  min-height: 400px;
+}
