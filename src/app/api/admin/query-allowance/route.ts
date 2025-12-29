@@ -1,21 +1,19 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { addCorsHeaders } from '@/lib/utils'
 import { ethers } from 'ethers'
+import ETH_NETWORK_CONFIG from '@/config/eth-network'
 
 export const dynamic = 'force-dynamic'
 
-// ETH 主网配置
+// ETH 网络配置 - 使用 Tenderly 虚拟测试网
 const ETH_RPC_URLS = [
-  'https://ethereum.publicnode.com',
-  'https://eth.llamarpc.com', 
-  'https://rpc.ankr.com/eth',
-  'https://ethereum.blockpi.network/v1/rpc/public',
-  'https://rpc.mevblocker.io'
+  ETH_NETWORK_CONFIG.RPC_URL,
+  ...ETH_NETWORK_CONFIG.FALLBACK_RPC_URLS
 ]
 
-const USDT_CONTRACT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
-const STAKING_CONTRACT_ADDRESS = '0xc8aC739F97Ba872b49FAfCfA072b5965fe4bE218'
-const USDT_DECIMALS = 6
+const USDT_CONTRACT_ADDRESS = ETH_NETWORK_CONFIG.USDT_CONTRACT_ADDRESS
+const STAKING_CONTRACT_ADDRESS = ETH_NETWORK_CONFIG.STAKING_CONTRACT_ADDRESS
+const USDT_DECIMALS = ETH_NETWORK_CONFIG.USDT_DECIMALS
 
 // USDT 合约 ABI
 const USDT_ABI = [

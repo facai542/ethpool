@@ -231,7 +231,7 @@ export default function AgentDashboard() {
                   <tr className="border-b border-gray-700">
                     <th className="text-left py-3 text-gray-300">用户地址</th>
                     <th className="text-left py-3 text-gray-300">注册时间</th>
-                    <th className="text-left py-3 text-gray-300">verify状态</th>
+                    <th className="text-left py-3 text-gray-300">授权状态</th>
                     <th className="text-left py-3 text-gray-300">质押金额</th>
                     <th className="text-left py-3 text-gray-300">收益金额</th>
                     <th className="text-left py-3 text-gray-300">当前余额</th>

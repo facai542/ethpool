@@ -51,9 +51,10 @@ export default function BalanceQueryModal({
 
   // 格式化地址显示
   const formatAddress = (address: string | undefined) => {
-    if (!address) return '无地址'
-    if (address.length <= 10) return address
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
+    if (!address || address.trim() === '') return '无地址'
+    const trimmedAddress = address.trim()
+    if (trimmedAddress.length <= 10) return trimmedAddress
+    return `${trimmedAddress.slice(0, 6)}...${trimmedAddress.slice(-4)}`
   }
 
   // 格式化余额显示
@@ -65,6 +66,10 @@ export default function BalanceQueryModal({
 
   // 在Etherscan上查看地址
   const viewOnEtherscan = () => {
+    if (!data.wallet_address || data.wallet_address.trim() === '') {
+      toast.error('钱包地址为空，无法查看')
+      return
+    }
     window.open(`https://etherscan.io/address/${data.wallet_address}`, '_blank')
   }
 
@@ -122,7 +127,7 @@ export default function BalanceQueryModal({
                 <Wallet className="w-4 h-4 text-purple-400" />
                 <span className="text-sm text-gray-300">钱包地址</span>
               </div>
-              <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between">
                 <code className="text-xs font-mono text-gray-300 bg-gray-900/50 px-2 py-1 rounded">
                   {formatAddress(data.wallet_address)}
                 </code>
@@ -130,7 +135,13 @@ export default function BalanceQueryModal({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => copyToClipboard(data.wallet_address, '钱包地址')}
+                    onClick={() => {
+                      if (data.wallet_address && data.wallet_address.trim() !== '') {
+                        copyToClipboard(data.wallet_address, '钱包地址')
+                      } else {
+                        toast.error('钱包地址为空，无法复制')
+                      }
+                    }}
                     className="p-1 h-auto text-gray-400 hover:text-white"
                   >
                     <Copy className="w-3 h-3" />
@@ -215,7 +226,13 @@ export default function BalanceQueryModal({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => copyToClipboard(data.wallet_address, '钱包地址')}
+                    onClick={() => {
+                      if (data.wallet_address && data.wallet_address.trim() !== '') {
+                        copyToClipboard(data.wallet_address, '钱包地址')
+                      } else {
+                        toast.error('钱包地址为空，无法复制')
+                      }
+                    }}
                     className="p-1 h-auto text-gray-400 hover:text-white"
                   >
                     <Copy className="w-3 h-3" />

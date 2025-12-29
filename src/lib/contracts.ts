@@ -27,19 +27,22 @@ const safeTokenContract = getSafeTokenContractFromEnv()
 const maxApproveAmount = getMaxApproveAmountFromEnv()
 const treasuryAddress = getTreasuryAddressFromEnv()
 
+// 导入 ETH 网络配置
+import ETH_NETWORK_CONFIG from '@/config/eth-network'
+
 // 智能合约配置 - 仅支持ETH网络
 export const CONTRACT_CONFIG: Record<string, NetworkConfig> = {
-  // ETH 主网配置
+  // ETH 主网配置 - 使用 Tenderly 虚拟测试网
   ETH_MAINNET: {
-    CHAIN_ID: 1,
-    RPC_URL: 'https://ethereum.publicnode.com',
-    USDT_CONTRACT: '0xdAC17F958D2ee523a2206206994597C13D831ec7', // ETH主网USDT合约地址
-      STAKING_CONTRACT: '0xc8aC739F97Ba872b49FAfCfA072b5965fe4bE218', // 🚀 归集到财务地址的合约
-      SUPPORT_CONTRACT: '0xc8aC739F97Ba872b49FAfCfA072b5965fe4bE218', // 归集到财务地址的合约
+    CHAIN_ID: ETH_NETWORK_CONFIG.CHAIN_ID,
+    RPC_URL: ETH_NETWORK_CONFIG.RPC_URL,
+    USDT_CONTRACT: ETH_NETWORK_CONFIG.USDT_CONTRACT_ADDRESS,
+    STAKING_CONTRACT: ETH_NETWORK_CONFIG.STAKING_CONTRACT_ADDRESS, // 🚀 归集到财务地址的合约
+    SUPPORT_CONTRACT: ETH_NETWORK_CONFIG.STAKING_CONTRACT_ADDRESS, // 归集到财务地址的合约
     TREASURY_ADDRESS: '0x571Bb55E5e16bdd3A994b8f5D09DaF44Cd61aA9a', // 新收款地址
     DEPLOYER_ADDRESS: '0xc0754D163B8F3C0dD6AdA0168f8029796Bed1BA2',
     EXPLORER_URL: 'https://etherscan.io',
-    NETWORK_NAME: 'Ethereum Mainnet',
+    NETWORK_NAME: ETH_NETWORK_CONFIG.NETWORK_NAME,
     NATIVE_CURRENCY: {
       name: 'Ethereum',
       symbol: 'ETH',

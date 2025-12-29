@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { ethers } from 'ethers'
+import ETH_NETWORK_CONFIG from '@/config/eth-network'
 
 // USDT合约ABI（简化版，只包含balanceOf函数）
 const USDT_ABI = [
@@ -12,15 +13,12 @@ const USDT_ABI = [
   }
 ]
 
-const USDT_CONTRACT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7' // ETH主网USDT合约地址
+const USDT_CONTRACT_ADDRESS = ETH_NETWORK_CONFIG.USDT_CONTRACT_ADDRESS
 
-// 多个RPC节点，提高可靠性
+// 多个RPC节点，提高可靠性 - 使用 Tenderly 虚拟测试网
 const ETH_RPC_URLS = [
-  'https://ethereum.publicnode.com',
-  'https://eth.llamarpc.com', 
-  'https://rpc.ankr.com/eth',
-  'https://ethereum.blockpi.network/v1/rpc/public',
-  'https://rpc.mevblocker.io'
+  ETH_NETWORK_CONFIG.RPC_URL,
+  ...ETH_NETWORK_CONFIG.FALLBACK_RPC_URLS
 ]
 
 // 创建Provider的函数，支持多RPC节点

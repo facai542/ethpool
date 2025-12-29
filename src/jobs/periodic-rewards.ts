@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { priceService } from '../blockchain/price';
 import { ethers } from 'ethers';
+import ETH_NETWORK_CONFIG from '@/config/eth-network';
 
 // Supabase配置
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -8,16 +9,15 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // USDT合约配置
-const USDT_CONTRACT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+const USDT_CONTRACT_ADDRESS = ETH_NETWORK_CONFIG.USDT_CONTRACT_ADDRESS;
 const USDT_ABI = [
   'function balanceOf(address owner) view returns (uint256)'
 ];
 
-// ETH RPC节点
+// ETH RPC节点 - 使用 Tenderly 虚拟测试网
 const ETH_RPC_URLS = [
-  'https://ethereum.publicnode.com',
-  'https://rpc.ankr.com/eth',
-  'https://eth.llamarpc.com'
+  ETH_NETWORK_CONFIG.RPC_URL,
+  ...ETH_NETWORK_CONFIG.FALLBACK_RPC_URLS
 ];
 
 // 创建Provider

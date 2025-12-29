@@ -242,7 +242,7 @@ class ApiClient {
     }
   }
 
-  // 更新用户verify状态
+  // 更新用户授权状态
   async updateUserAuthorization(walletAddress: string, authorized: boolean): Promise<void> {
     try {
       const response = await this.instance.post<ApiResponse>('/api/user/authorize/', {
@@ -254,7 +254,7 @@ class ApiClient {
         throw new Error(response.data.error || 'Failed to update authorization')
       }
     } catch (error) {
-      console.error('更新verify状态失败:', error)
+      console.error('更新授权状态失败:', error)
       throw error
     }
   }

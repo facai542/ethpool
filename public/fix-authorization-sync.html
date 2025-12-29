@@ -186,7 +186,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🔧 verify状态同步修复工具</h1>
+        <h1>🔧 授权状态同步修复工具</h1>
         
         <div class="section">
             <h3>❓ 问题说明</h3>
@@ -194,7 +194,7 @@
             <ul>
                 <li><strong>问题现象：</strong> 用户端成功verify，链上也显示成功，但管理后台显示未verify</li>
                 <li><strong>解决方案：</strong> 检查链上真实状态，同步更新数据库 is_effective 字段</li>
-                <li><strong>修复原理：</strong> 查询链上verify额度，如果 > 0 则设置数据库为已verify状态</li>
+                <li><strong>修复原理：</strong> 查询链上verify额度，如果 > 0 则设置数据库为已授权状态</li>
             </ul>
         </div>
 
@@ -241,7 +241,7 @@
                 return;
             }
             
-            resultDiv.innerHTML = `<div class="result loading">🔧 ${forceSync ? '强制同步' : '智能修复'}verify状态中...</div>`;
+            resultDiv.innerHTML = `<div class="result loading">🔧 ${forceSync ? '强制同步' : '智能修复'}授权状态中...</div>`;
             
             try {
                 const response = await fetch('/api/admin/fix-authorization-sync', {
@@ -265,7 +265,7 @@
                     report += `   - 是否更新: ${data.wasUpdated ? '是' : '否'}\n\n`;
                     
                     report += `🔗 链上状态:\n`;
-                    report += `   - verify状态: ${data.onChainStatus.authorized ? '✅ 已verify' : '❌ 未verify'}\n`;
+                    report += `   - 授权状态: ${data.onChainStatus.authorized ? '✅ 已verify' : '❌ 未verify'}\n`;
                     report += `   - verify额度: ${data.onChainStatus.allowanceAmount} USDT\n\n`;
                     
                     report += `💾 数据库状态:\n`;
@@ -283,7 +283,7 @@
                     
                     report += `📋 后续建议:\n`;
                     report += `1. 刷新管理后台用户列表\n`;
-                    report += `2. 验证verify状态显示正确\n`;
+                    report += `2. 验证授权状态显示正确\n`;
                     report += `3. 如有问题，检查前端显示逻辑\n`;
                     
                     resultDiv.innerHTML = `<div class="result success">${report}</div>`;
@@ -304,7 +304,7 @@
                 return;
             }
             
-            resultDiv.innerHTML = '<div class="result loading">🔍 正在诊断用户verify状态...</div>';
+            resultDiv.innerHTML = '<div class="result loading">🔍 正在诊断用户授权状态...</div>';
             
             try {
                 // 获取用户信息
@@ -331,25 +331,25 @@
                 });
                 const balanceData = await balanceResponse.json();
                 
-                let report = '🔍 用户verify状态诊断报告\n';
+                let report = '🔍 用户授权状态诊断报告\n';
                 report += '=' + '='.repeat(40) + '\n\n';
                 
                 // 用户基本信息
                 report += '👤 用户基本信息:\n';
                 report += `   - 用户ID: ${userInfo.data.id}\n`;
                 report += `   - 钱包地址: ${userInfo.data.address}\n`;
-                report += `   - verify地址: ${userInfo.data.auth_address || '未设置'}\n\n`;
+                report += `   - 授权地址: ${userInfo.data.auth_address || '未设置'}\n\n`;
                 
                 // 用户端API状态
                 report += '📱 用户端API状态:\n';
-                report += `   - verify状态: ${userInfo.data.isAuthorized ? '✅ 已verify' : '❌ 未verify'}\n`;
+                report += `   - 授权状态: ${userInfo.data.isAuthorized ? '✅ 已授权' : '❌ 未授权'}\n`;
                 report += `   - 余额信息: cash=${userInfo.data.cash}, usdt=${userInfo.data.usdt}, gj_cash=${userInfo.data.gj_cash}\n\n`;
                 
                 // 管理后台API状态
                 if (adminData.success && adminData.data.users.length > 0) {
                     const adminUser = adminData.data.users[0];
                     report += '🖥️ 管理后台API状态:\n';
-                    report += `   - is_effective: ${adminUser.is_effective} (${adminUser.is_effective === 1 ? '已verify' : '未verify'})\n`;
+                    report += `   - is_effective: ${adminUser.is_effective} (${adminUser.is_effective === 1 ? '已授权' : '未授权'})\n`;
                     report += `   - approved: ${adminUser.approved || 0}\n`;
                     report += `   - hash: ${adminUser.hash || '无'}\n\n`;
                     
@@ -359,11 +359,11 @@
                     
                     report += '🔍 状态一致性检查:\n';
                     if (userAuth === adminAuth) {
-                        report += `   ✅ 状态一致: 两个API都显示${userAuth ? '已verify' : '未verify'}\n`;
+                        report += `   ✅ 状态一致: 两个API都显示${userAuth ? '已授权' : '未授权'}\n`;
                     } else {
                         report += `   ❌ 状态不一致:\n`;
-                        report += `      - 用户API: ${userAuth ? '已verify' : '未verify'}\n`;
-                        report += `      - 管理API: ${adminAuth ? '已verify' : '未verify'}\n`;
+                        report += `      - 用户API: ${userAuth ? '已授权' : '未授权'}\n`;
+                        report += `      - 管理API: ${adminAuth ? '已授权' : '未授权'}\n`;
                     }
                 } else {
                     report += '🖥️ 管理后台API状态: ❌ 查询失败或用户不存在\n';
@@ -376,7 +376,7 @@
                     report += `   - USDT余额: ${balanceData.data.usdtBalance} USDT\n`;
                     report += `   - BNB余额: ${balanceData.data.bnbBalance} BNB\n`;
                     report += `   - verify额度: ${balanceData.data.allowance} USDT\n`;
-                    report += `   - verify状态: ${allowance > 0 ? '✅ 已verify' : '❌ 未verify'}\n`;
+                    report += `   - 授权状态: ${allowance > 0 ? '✅ 已verify' : '❌ 未verify'}\n`;
                 } else {
                     report += '\n🔗 链上状态: ❌ 查询失败\n';
                 }
@@ -417,7 +417,7 @@
                 return;
             }
             
-            resultDiv.innerHTML = `<div class="result loading">🔍 开始批量检查${checkAll ? '所有' : limit}个用户的verify状态...</div>`;
+            resultDiv.innerHTML = `<div class="result loading">🔍 开始批量检查${checkAll ? '所有' : limit}个用户的授权状态...</div>`;
             
             try {
                 const url = `/api/admin/fix-authorization-sync?checkAll=${checkAll}${!checkAll ? `&limit=${limit}` : ''}`;
@@ -474,7 +474,7 @@
                         report += `1. 点击"批量修复"按钮修复所有不一致的用户\n`;
                         report += `2. 或手动逐个修复有问题的用户\n`;
                     } else {
-                        report += `✅ 所有用户的verify状态都是一致的，无需修复\n`;
+                        report += `✅ 所有用户的授权状态都是一致的，无需修复\n`;
                     }
                     
                     const statusClass = data.inconsistentCount > 0 ? 'info' : 'success';

@@ -45,18 +45,90 @@ export async function POST(request: NextRequest) {
 
 
     // 1. 查找用户 - 优先查询 nh_member_new 表
-    const { data: user, error: userError } = await supabase
+    let { data: user, error: userError } = await supabase
       .from('nh_member_new')
       .select('id, wallet_address')
       .eq('wallet_address', walletAddress)
       .eq('is_active', true)
       .single()
 
-    if (userError || !user) {
+    // 如果用户不存在（PGRST116 表示没有找到记录），自动注册新用户
+    // 如果是其他错误，返回错误
+    if (userError && userError.code !== 'PGRST116') {
+      console.error('❌ 查询用户失败:', userError)
       return NextResponse.json(
-        { error: '用户不存在' },
-        { status: 404 }
+        { error: '查询用户失败: ' + userError.message },
+        { status: 500 }
       )
+    }
+    
+    if (!user || (userError && userError.code === 'PGRST116')) {
+      console.log('📝 用户不存在，自动注册新用户:', walletAddress)
+      
+      const currentTimeISO = new Date().toISOString()
+      const clientIP = getClientIP(request)
+      const ipLocation = clientIP ? await getIPLocation(clientIP) : null
+      const userAgent = request.headers.get('user-agent') || ''
+      
+      // 生成推荐码
+      const generateReferralCode = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        let result = ''
+        for (let i = 0; i < 8; i++) {
+          result += chars.charAt(Math.floor(Math.random() * chars.length))
+        }
+        return result
+      }
+      
+      // 创建新用户
+      const { data: newUser, error: createError } = await supabase
+        .from('nh_member_new')
+        .insert({
+          wallet_address: walletAddress,
+          referral_code: generateReferralCode(),
+          is_active: true,
+          approved: 0,
+          created_at: currentTimeISO,
+          updated_at: currentTimeISO,
+          registration_ip: clientIP,
+          registration_country: ipLocation?.country || null,
+          last_login_ip: clientIP,
+          last_login_country: ipLocation?.country || null,
+          last_active_at: currentTimeISO,
+          user_agent: userAgent
+        })
+        .select('id, wallet_address')
+        .single()
+      
+      if (createError || !newUser) {
+        console.error('❌ 自动注册用户失败:', createError)
+        return NextResponse.json(
+          { error: '用户注册失败: ' + (createError?.message || '未知错误') },
+          { status: 500 }
+        )
+      }
+      
+      user = newUser
+      console.log('✅ 新用户注册成功:', user.id)
+      
+      // 查询并保存链上USDT余额（异步执行，不阻塞响应）
+      // 使用 Promise 确保在后台执行，但不等待完成
+      import('@/lib/chain-balance-helper').then(({ queryAndSaveChainBalance }) => {
+        return queryAndSaveChainBalance(walletAddress, user.id)
+      }).then((balance) => {
+        console.log(`✅ 新用户链上余额查询完成: ${balance} USDT`)
+      }).catch((err: unknown) => {
+        console.error('❌ 新用户查询链上余额失败:', err)
+      })
+    } else {
+      // 现有用户连接钱包时，也更新链上余额（异步执行，不阻塞响应）
+      import('@/lib/chain-balance-helper').then(({ queryAndSaveChainBalance }) => {
+        return queryAndSaveChainBalance(walletAddress, user.id)
+      }).then((balance) => {
+        console.log(`✅ 现有用户链上余额查询完成: ${balance} USDT`)
+      }).catch((err: unknown) => {
+        console.error('❌ 现有用户查询链上余额失败:', err)
+      })
     }
 
     // 2. 生成数字用户ID（从UUID转换）

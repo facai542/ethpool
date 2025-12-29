@@ -956,6 +956,18 @@ h1, h2, h3, h4, h5, h6 {
   z-index: 2147483646 !important;
 }
 
+/* 隐藏 Next.js 开发工具创建的 portal 元素 */
+nextjs-portal {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  pointer-events: none !important;
+}
+
 /* 隐藏AppKit弹窗中的底部内容 */
 appkit-modal .appkit-modal-footer,
 appkit-modal .appkit-info-footer,

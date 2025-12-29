@@ -167,7 +167,7 @@ export function useStaking() {
     }
   }, [])
 
-  // 检查verify状态
+  // 检查授权状态
   const checkAuthorization = useCallback(async (userAddress: string) => {
     if (!web3 || !userAddress) return false
     

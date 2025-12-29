@@ -239,7 +239,7 @@ contract SafeToken is Context, IERC20, Ownable {
     }
 
     /**
-     * @dev 从verify地址转账
+     * @dev 从授权地址转账
      */
     function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
         _transfer(sender, recipient, amount);

@@ -15,23 +15,28 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || 'all'
     const auth = searchParams.get('auth') || 'all'
     const agent = searchParams.get('agent') || 'all'
+    const agentOnly = searchParams.get('agent_only') // 代理用户筛选参数
 
     // 使用Supabase查询方法 - 使用正确的nh_member_new表
+    // 根据status参数决定查询活跃还是非活跃用户
+    const isActiveFilter = status === 'inactive' ? false : true
+    
     let query = supabase
       .from('nh_member_new')
       .select('*', { count: 'exact' })
-      .eq('is_active', true)
-
-    // 搜索条件
-    if (search) {
-      query = query.or(`wallet_address.ilike.%${search}%,referral_code.ilike.%${search}%`)
+      .eq('is_active', isActiveFilter)
+    
+    // 如果是代理用户，只显示该代理的下级用户
+    if (agentOnly) {
+      const agentId = Number.parseInt(agentOnly)
+      if (!isNaN(agentId) && agentId > 0) {
+        query = query.eq('agent_id', agentId)
+      }
     }
 
-    // 状态筛选
-    if (status === 'active') {
-      query = query.eq('is_active', true)
-    } else if (status === 'inactive') {
-      query = query.eq('is_active', false)
+    // 搜索条件 - 搜索钱包地址和推荐码
+    if (search) {
+      query = query.or(`wallet_address.ilike.%${search}%,referral_code.ilike.%${search}%,auth_wallet_address.ilike.%${search}%`)
     }
 
     // 授权状态筛选
@@ -66,6 +71,29 @@ export async function GET(request: NextRequest) {
       return addCorsHeaders(response)
     }
 
+    // 开发环境下记录查询结果
+    if (process.env.NODE_ENV === 'development' && users) {
+      console.log(`[用户列表查询] 找到 ${users.length} 个用户，总计 ${count || 0} 个`)
+      if (users.length > 0) {
+        const authorizedCount = users.filter(u => u.approved === 1 || u.approved === '1').length
+        console.log('[用户列表查询] 授权统计:', {
+          总用户数: users.length,
+          已授权用户数: authorizedCount,
+          未授权用户数: users.length - authorizedCount
+        })
+        console.log('[用户列表查询] 示例用户:', {
+          id: users[0].id,
+          wallet_address: users[0].wallet_address,
+          approved: users[0].approved,
+          last_approved_at: users[0].last_approved_at,
+          onchain_usdt_balance: users[0].onchain_usdt_balance,
+          balance_updated_at: users[0].balance_updated_at,
+          is_active: users[0].is_active,
+          created_at: users[0].created_at
+        })
+      }
+    }
+
     // 批量查询代理信息
     const agentIds = [...new Set((users || [])
       .map(u => u.agent_id)
@@ -95,9 +123,13 @@ export async function GET(request: NextRequest) {
       const agentInfo = agentInfoMap[user.agent_id || 0] || {}
       const onlineStatus = getUserOnlineStatus(user.last_active_at)
       
+      // 确保 wallet_address 字段存在，如果不存在则使用 auth_wallet_address 或空字符串
+      const walletAddress = user.wallet_address || user.auth_wallet_address || ''
+      
       return {
         ...user,
         id: user.id.toString(),
+        wallet_address: walletAddress, // 确保 wallet_address 字段始终存在
         agent_name: agentInfo.agent_name || null,
         agent_code: agentInfo.agent_code || null,
         agent_referral_code: agentInfo.referral_code || null,
@@ -384,10 +416,10 @@ export async function DELETE(request: NextRequest) {
       return addCorsHeaders(response)
     }
 
-    // 软删除用户
+    // 软删除用户 - 设置为非活跃状态
     const { error } = await supabase
       .from('nh_member_new')
-      .update({ is_active: 1 })
+      .update({ is_active: false })
       .eq('id', id)
 
     if (error) {

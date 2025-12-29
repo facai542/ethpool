@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import ETH_NETWORK_CONFIG from '@/config/eth-network'
 
 // 动态路由配置
 export const dynamic = 'force-dynamic'
 
-// ETH主网USDT合约地址
-const USDT_CONTRACT = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
-const ETH_RPC_URL = 'https://ethereum.publicnode.com'
+// ETH网络配置 - 使用 Tenderly 虚拟测试网
+const USDT_CONTRACT = ETH_NETWORK_CONFIG.USDT_CONTRACT_ADDRESS
+const ETH_RPC_URL = ETH_NETWORK_CONFIG.RPC_URL
 
 /**
  * 获取链上USDT余额

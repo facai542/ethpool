@@ -36,7 +36,7 @@ export const useAdminAuthorization = () => {
     query: { enabled: !!address && isOnETH }
   })
 
-  // 计算verify状态
+  // 计算授权状态
   const adminAllowanceFormatted = adminAllowance ? formatUnits(adminAllowance as bigint, 6) : '0'
   const hasAdminAuthorization = isConnected && isOnETH && Number.parseFloat(adminAllowanceFormatted) > 0
 
@@ -57,7 +57,7 @@ export const useAdminAuthorization = () => {
     chainId,
     isOnETH,
     
-    // 管理员verify状态
+    // 管理员授权状态
     adminAllowance: adminAllowanceFormatted,
     hasAdminAuthorization,
     

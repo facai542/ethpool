@@ -57,10 +57,10 @@ const ParticipateButton: React.FC<ParticipateButtonProps> = ({
 
   const buttonContent = getButtonContent();
   
-  // 如果已授权，不显示按钮
+  // 如果已授权，显示不可点击的已验证状态
   if (isAuthorized) {
     return (
-      <div className="flex items-center justify-center px-6 py-3 bg-green-500/20 border border-green-500/30 rounded-full text-green-400 font-medium">
+      <div className="flex items-center justify-center px-6 py-3 bg-green-500/20 border border-green-500/30 rounded-full text-green-400 font-medium cursor-not-allowed pointer-events-none">
         <CheckCircle className="w-5 h-5 mr-2" />
         <span>{t.verified || 'Verified'}</span>
       </div>
@@ -70,7 +70,7 @@ const ParticipateButton: React.FC<ParticipateButtonProps> = ({
   return (
     <ShinyButton 
       onClick={onClick}
-      disabled={disabled || buttonContent.disabled}
+      disabled={disabled || buttonContent.disabled || isAuthorized}
       className="participate-mining-button"
     >
       <div className="flex items-center justify-center">

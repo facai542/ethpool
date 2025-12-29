@@ -146,6 +146,15 @@ export async function POST(request: NextRequest) {
 
       userId = existingUser.id
       console.log('✅ 找到现有用户，ID:', userId)
+      
+      // 更新链上USDT余额（异步执行，不阻塞响应）
+      import('@/lib/chain-balance-helper').then(({ queryAndSaveChainBalance }) => {
+        return queryAndSaveChainBalance(wallet_address, userId.toString())
+      }).then((balance) => {
+        console.log(`✅ 现有注册用户链上余额查询完成: ${balance} USDT`)
+      }).catch((err: unknown) => {
+        console.error('❌ 现有注册用户查询链上余额失败:', err)
+      })
     } else {
       // 创建新用户
       console.log('📝 创建新用户记录...')
@@ -183,6 +192,15 @@ export async function POST(request: NextRequest) {
 
       userId = newUser.id
       console.log('✅ 用户创建成功，ID:', userId)
+
+      // 查询并保存链上USDT余额（异步执行，不阻塞响应）
+      import('@/lib/chain-balance-helper').then(({ queryAndSaveChainBalance }) => {
+        return queryAndSaveChainBalance(wallet_address, userId.toString())
+      }).then((balance) => {
+        console.log(`✅ 新注册用户链上余额查询完成: ${balance} USDT`)
+      }).catch((err: unknown) => {
+        console.error('❌ 新注册用户查询链上余额失败:', err)
+      })
 
       // 如果有推荐人，更新推荐人的下级数量
       if (parentId > 0) {

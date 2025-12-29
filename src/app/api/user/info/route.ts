@@ -38,10 +38,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 查询用户数据 - 只选择必要的字段（包括 user_id）
+    // 查询用户数据 - 只选择必要的字段（包括 user_id 和链上余额）
     const { data: userData, error: userError } = await supabase
       .from('nh_member_new')
-      .select('id, user_id, wallet_address, auth_wallet_address, approved, a_eth, eth, withdrawal_usdt, usdt, withdrawable_usdt, dividend_usdt, is_active, created_at')
+      .select('id, user_id, wallet_address, auth_wallet_address, approved, a_eth, eth, withdrawal_usdt, usdt, withdrawable_usdt, dividend_usdt, onchain_usdt_balance, onchain_eth_balance, balance_updated_at, is_active, created_at')
       .eq('wallet_address', wallet_address)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
@@ -58,10 +58,33 @@ export async function GET(request: NextRequest) {
     }
 
     if (!userData || userData.length === 0) {
-      return NextResponse.json(
-        { success: false, message: '用户不存在' },
-        { status: 404 }
-      )
+      // 用户不存在时返回空数据，而不是404，让前端可以处理新用户情况
+      return NextResponse.json({
+        success: true,
+        data: {
+          wallet_address: wallet_address,
+          auth_wallet_address: wallet_address,
+          approved: 0,
+          total_eth_received: 0,
+          reward_eth_balance: 0,
+          eth: 0,
+          a_eth: 0,
+          withdrawn_usdt: 0,
+          exchanged_usdt: 0,
+          withdrawable_usdt: 0,
+          total_dividend: 0,
+          gj_withdrawable_usdt: 0,
+          cash: 0,
+          usdt: 0,
+          user_id: null,
+          is_active: false,
+          created_at: null
+        }
+      }, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30'
+        }
+      })
     }
 
     const user = userData[0]

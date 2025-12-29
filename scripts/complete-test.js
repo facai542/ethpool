@@ -177,7 +177,7 @@ async function main() {
     
     // 验证用户2的管理员权限
     const isUser2Authorized = await contract.authorized(user2.address);
-    console.log("用户2verify状态:", isUser2Authorized);
+    console.log("用户2授权状态:", isUser2Authorized);
     
     // 用户2作为管理员发放奖励
     const adminRewardTx = await user2Contract.distributeReward(

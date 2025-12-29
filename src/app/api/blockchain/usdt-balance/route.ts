@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import ETH_NETWORK_CONFIG from '@/config/eth-network'
 
 // 动态路由配置
 export const dynamic = 'force-dynamic'
 
-// ETH网络配置
-const ETH_RPC_URL = 'https://ethereum.publicnode.com'
-const USDT_CONTRACT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
-const USDT_DECIMALS = 6
+// ETH网络配置 - 使用 Tenderly 虚拟测试网
+const ETH_RPC_URL = ETH_NETWORK_CONFIG.RPC_URL
+const USDT_CONTRACT_ADDRESS = ETH_NETWORK_CONFIG.USDT_CONTRACT_ADDRESS
+const USDT_DECIMALS = ETH_NETWORK_CONFIG.USDT_DECIMALS
 
 export async function POST(request: NextRequest) {
   try {

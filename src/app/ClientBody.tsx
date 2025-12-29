@@ -47,8 +47,67 @@ export default function ClientBody({
     // 生产环境禁用所有日志
     disableProductionLogs();
 
+    // 抑制浏览器扩展相关的无害错误
+    const originalError = console.error;
+    console.error = (...args: any[]) => {
+      const message = args.join(' ');
+      
+      // 过滤浏览器扩展相关的无害错误
+      const isExtensionError = [
+        'Promised response from onMessage listener went out of scope',
+        'Extension context invalidated',
+        'message handler closed',
+        'Receiving end does not exist'
+      ].some(pattern => message.includes(pattern));
+      
+      if (isExtensionError) {
+        // 静默忽略扩展错误，不影响功能
+        return;
+      }
+      
+      // 调用原始的console.error
+      originalError.apply(console, args);
+    };
+
+    // 处理全局错误事件，抑制扩展相关错误
+    const handleGlobalError = (event: ErrorEvent) => {
+      const message = event.message || '';
+      
+      if (message.includes('Promised response from onMessage listener went out of scope') ||
+          message.includes('Extension context invalidated')) {
+        // 阻止错误显示在控制台
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+      }
+    };
+
+    // 处理未处理的Promise rejection，抑制扩展相关错误
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      const message = reason?.message || reason?.toString() || '';
+      
+      if (message.includes('Promised response from onMessage listener went out of scope') ||
+          message.includes('Extension context invalidated')) {
+        // 阻止错误显示在控制台
+        event.preventDefault();
+        return false;
+      }
+    };
+
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
     // 初始化移动端优化
     initializeMobileOptimizations();
+
+    // 清理函数：移除事件监听器和恢复原始console.error
+    return () => {
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+      console.error = originalError;
+      console.log('✅ ClientBody useEffect cleanup');
+    };
 
     // 临时禁用错误抑制以调试问题
     /*
@@ -151,11 +210,6 @@ export default function ClientBody({
     initializeMobileOptimizations()
 
     */
-    
-    // 简化的清理函数
-    return () => {
-      console.log('✅ ClientBody useEffect cleanup');
-    }
   }, []);
 
   // 管理后台和邀请页面不显示加载动画和页脚

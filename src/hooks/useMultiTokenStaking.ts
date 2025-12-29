@@ -125,7 +125,7 @@ export const useMultiTokenStaking = () => {
     })
   }
 
-  // 检查代币verify状态
+  // 检查代币授权状态
   const isTokenAuthorized = (tokenSymbol: string, requiredAmount?: string) => {
     const allowanceData = getTokenAllowance(tokenSymbol)
     const allowance = Number.parseFloat(allowanceData.data || '0')

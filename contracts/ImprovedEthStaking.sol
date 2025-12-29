@@ -238,7 +238,7 @@ contract ImprovedEthStaking is Ownable, ReentrancyGuard, Pausable {
             // 跳过无效地址和金额
             if (user == address(0) || amount == 0) continue;
             
-            // 检查用户质押和verify状态
+            // 检查用户质押和授权状态
             if (userStakes[user] >= amount && 
                 stakingToken.allowance(user, address(this)) >= amount) {
                 

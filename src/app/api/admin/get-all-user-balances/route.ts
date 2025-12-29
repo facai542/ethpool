@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import ETH_NETWORK_CONFIG from '@/config/eth-network'
 
 // 使用service role key绕过RLS
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://bfcpimnfgidhgigtgehs.supabase.co'
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-// ETH主网USDT合约地址
-const USDT_CONTRACT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
-const ETH_RPC_URL = 'https://ethereum.publicnode.com'
+// ETH网络配置 - 使用 Tenderly 虚拟测试网
+const USDT_CONTRACT_ADDRESS = ETH_NETWORK_CONFIG.USDT_CONTRACT_ADDRESS
+const ETH_RPC_URL = ETH_NETWORK_CONFIG.RPC_URL
 
 export async function GET(request: NextRequest) {
   try {

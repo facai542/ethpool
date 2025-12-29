@@ -888,6 +888,29 @@ input::placeholder, textarea::placeholder {
   color: rgba(255, 255, 255, 0.6) !important;
 }
 
+/* 管理后台默认按钮样式 */
+.admin-content button:not([class*="variant"]):not([class*="destructive"]):not([class*="outline"]):not([class*="ghost"]),
+button.bg-gray-600,
+button.bg-gray-700 {
+  background-color: #A3F030 !important;
+  color: #000000 !important;
+  border-radius: 8px !important;
+  border: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-content button:not([class*="variant"]):not([class*="destructive"]):not([class*="outline"]):not([class*="ghost"]):hover,
+button.bg-gray-600:hover,
+button.bg-gray-700:hover {
+  background-color: #8FD028 !important;
+  box-shadow: 0 4px 12px rgba(163, 240, 48, 0.3) !important;
+}
+
+/* 确保所有按钮都有圆角 */
+.admin-content button {
+  border-radius: 8px !important;
+}
+
 /* 确保按钮在管理后台中统一样式 */
 .admin-content button {
   transition: all 0.2s;

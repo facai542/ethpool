@@ -26,10 +26,25 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (userError || !user) {
+      // 用户不存在时返回空数据，而不是404
       return NextResponse.json({ 
-        success: false, 
-        error: 'User not found' 
-      }, { status: 404 })
+        success: true,
+        data: {
+          user: {
+            wallet_address: wallet_address,
+            staked_amount: 0,
+            reward_amount: 0,
+            withdrawable_amount: 0
+          },
+          transactions: [],
+          withdraws: [],
+          pagination: {
+            page,
+            limit,
+            total: 0
+          }
+        }
+      })
     }
 
     // 计算数字用户ID

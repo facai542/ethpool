@@ -527,7 +527,7 @@ const BinanceLiquidityStaking: React.FC<BinanceLiquidityStakingProps> = ({ userE
       // 模拟verify延迟
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // 设置所有池子为已verify状态
+      // 设置所有池子为已授权状态
       const allPoolIds = poolsData.map(pool => pool.id);
       const approvedState = allPoolIds.reduce((acc, poolId) => {
         acc[poolId] = true;
