@@ -122,11 +122,6 @@ export default function UsersPage() {
   const [adminSession, setAdminSession] = useState<{id: number, role_id: number, username: string} | null>(null)
   const [treasuryAddress, setTreasuryAddress] = useState<string>('0x571Bb55E5e16bdd3A994b8f5D09DaF44Cd61aA9a')
   
-  // 自动奖励发放状态
-  const [autoRewardsEnabled, setAutoRewardsEnabled] = useState(false)
-  const [autoRewardsLoading, setAutoRewardsLoading] = useState(false)
-  const [nextRewardRun, setNextRewardRun] = useState<string | null>(null)
-  
   // 检查是否为代理用户
   const isAgentUser = useCallback(() => {
     if (!adminSession) return false
@@ -328,63 +323,6 @@ export default function UsersPage() {
     }
   }
 
-  // 获取自动奖励发放状态
-  const fetchAutoRewardsStatus = async () => {
-    try {
-      const response = await fetch('/api/admin/auto-rewards', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success) {
-          setAutoRewardsEnabled(result.data.enabled)
-          setNextRewardRun(result.data.nextRun)
-        }
-      }
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('获取自动奖励状态失败:', error)
-      }
-    }
-  }
-
-  // 切换自动奖励发放状态
-  const toggleAutoRewards = async () => {
-    try {
-      setAutoRewardsLoading(true)
-      const response = await fetch('/api/admin/auto-rewards', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          enabled: !autoRewardsEnabled
-        })
-      })
-
-      const result = await response.json()
-      
-      if (result.success) {
-        setAutoRewardsEnabled(result.data.enabled)
-        setNextRewardRun(result.data.nextRun)
-        alert(`自动奖励发放已${result.data.enabled ? '开启' : '关闭'}`)
-      } else {
-        alert(`操作失败: ${result.error}`)
-      }
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('切换自动奖励状态失败:', error)
-      }
-      alert('操作失败，请重试')
-    } finally {
-      setAutoRewardsLoading(false)
-    }
-  }
-
   // 获取用户列表
   const fetchUsers = useCallback(async () => {
     try {
@@ -539,7 +477,6 @@ export default function UsersPage() {
       fetchSystemConfig() // 获取系统配置（收款地址）
       fetchAgents() // 加载代理列表
       fetchUsers()
-      fetchAutoRewardsStatus() // 获取自动奖励状态
     }
   }, [adminSession, fetchUsers])
 
@@ -2025,13 +1962,12 @@ export default function UsersPage() {
           <h1>用户管理</h1>
           <p>管理系统用户信息</p>
         </div>
-        <Button 
+        <button 
           onClick={() => setIsCreateModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700"
+          className="awesome-button"
         >
-          <Plus className="w-4 h-4 mr-2" />
           添加用户
-        </Button>
+        </button>
       </div>
 
       {/* 统计卡片 */}
@@ -2085,10 +2021,10 @@ export default function UsersPage() {
               <Coins className="w-5 h-5" />
             </div>
           </div>
-          <div className="stat-value">{stats.collected}</div>
+          <div className="stat-value">{stats.collected.toFixed(2)}</div>
           <div className="stat-change">
             <TrendingUp className="w-4 h-4" />
-            已归集金额
+            USDT
           </div>
         </div>
         
@@ -2103,51 +2039,6 @@ export default function UsersPage() {
           <div className="stat-change">
             <TrendingUp className="w-4 h-4" />
             首次授权奖励
-          </div>
-        </div>
-      </div>
-
-      {/* 自动奖励发放控制 */}
-      <div className="content-card">
-        <h3 className="flex items-center gap-2 mb-4">
-          <Zap className="w-4 h-4 lg:w-5 lg:h-5 text-yellow-400" />
-          自动奖励发放控制
-        </h3>
-        <div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="space-y-2 w-full sm:w-auto">
-              <div className="flex items-center gap-2">
-                <span className="text-slate-300 text-sm">状态:</span>
-                <Badge variant={autoRewardsEnabled ? "default" : "outline"} 
-                       className={`${autoRewardsEnabled ? "bg-green-500 hover:bg-green-600" : "border-gray-400 text-gray-400"} text-xs`}>
-                  {autoRewardsEnabled ? '已开启' : '已关闭'}
-                </Badge>
-              </div>
-              <div className="text-xs lg:text-sm text-slate-400">
-                发放频率: 每6小时执行一次 (每日4次)
-              </div>
-              {nextRewardRun && (
-                <div className="text-xs lg:text-sm text-slate-400">
-                  下次执行: {new Date(nextRewardRun).toLocaleString('zh-CN')}
-                </div>
-              )}
-            </div>
-            <Button
-              onClick={toggleAutoRewards}
-              disabled={autoRewardsLoading}
-              variant={autoRewardsEnabled ? "destructive" : "default"}
-              className={`${autoRewardsEnabled ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"} w-full sm:w-auto`}
-              size="sm"
-            >
-              {autoRewardsLoading ? (
-                <RefreshCw className="w-3 h-3 lg:w-4 lg:h-4 mr-2 animate-spin" />
-              ) : autoRewardsEnabled ? (
-                <XCircle className="w-3 h-3 lg:w-4 lg:h-4 mr-2" />
-              ) : (
-                <CheckCircle className="w-3 h-3 lg:w-4 lg:h-4 mr-2" />
-              )}
-              <span className="text-xs lg:text-sm">{autoRewardsLoading ? '处理中...' : autoRewardsEnabled ? '关闭自动发放' : '开启自动发放'}</span>
-            </Button>
           </div>
         </div>
       </div>
@@ -2261,7 +2152,7 @@ export default function UsersPage() {
           ) : (
             <>
               {/* 桌面端表格视图 */}
-              <div className="hidden lg:block overflow-x-auto">
+              <div className="hidden lg:block overflow-x-auto" style={{ overflowY: 'visible' }}>
               <table>
                 <thead>
                   <tr className="border-b border-slate-600">
@@ -2325,7 +2216,7 @@ export default function UsersPage() {
                       <td className="py-3 px-2">{getAuthStatusBadge(user.approved, user.id, '')}</td>
                       <td className="py-3 px-2">{getIPCountryDisplay(user)}</td>
                       <td className="py-3 px-2 text-slate-400 text-xs">{formatTime(user.created_at || '')}</td>
-                      <td className="py-3 px-2">
+                      <td className="py-3 px-2 relative overflow-visible">
                         <ActionMenu
                           groups={[
                             {

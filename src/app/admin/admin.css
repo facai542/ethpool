@@ -423,6 +423,9 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 1.5rem;
+  min-height: 1200px;
+  display: flex;
+  flex-direction: column;
 }
 
 .table-header {
@@ -441,6 +444,75 @@
 
 .table-content {
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 1400px;
+  min-height: 1000px;
+  flex: 1;
+  position: relative;
+  /* 平滑滚动 */
+  scroll-behavior: smooth;
+  /* 自定义滚动条样式 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.1);
+}
+
+/* Webkit 浏览器滚动条样式 */
+.table-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.table-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.table-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* 确保表格中的菜单单元格可以显示溢出内容 */
+.table-content table td {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* 菜单容器确保不被裁剪 - 强制使用 fixed positioning */
+/* 针对所有可能的菜单内容选择器 */
+.table-content [data-scope="menu"][data-part="content"],
+.table-content [data-scope="menu"] [data-part="content"],
+div[data-scope="menu"][data-part="content"],
+div[id*="menu"][id*="content"],
+[data-scope="menu"][data-part="content"] {
+  position: fixed !important;
+  z-index: 99999 !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  overflow-x: visible !important;
+}
+
+/* 确保菜单触发器不裁剪 */
+.table-content [data-scope="menu"][data-part="trigger"] {
+  position: relative;
+  z-index: 1;
+}
+
+/* 全局菜单内容样式 - 确保所有菜单都不被裁剪 */
+[data-scope="menu"][data-part="content"] {
+  position: fixed !important;
+  z-index: 99999 !important;
+}
+
+/* 表格中的菜单向左对齐 - 调整位置 */
+.table-content [data-scope="menu"][data-part="content"][data-placement="bottom-start"],
+.table-content [data-scope="menu"][data-part="content"][data-placement="bottom-end"] {
+  transform: translateX(-100%) !important;
+  margin-left: -8px !important;
 }
 
 table {
@@ -918,5 +990,70 @@ button.bg-gray-700:hover {
 
 .admin-content button:hover {
   opacity: 0.9;
+}
+
+/* Awesome Button 样式 - 使用 !important 确保覆盖 Button 组件的默认样式 */
+.awesome-button,
+button.awesome-button,
+.admin-content .awesome-button {
+  --color-1: #e5fb6a !important;
+  --color-2: #2bf46e !important;
+  --color-1-shadow: #e5fb6a23 !important;
+  --color-2-shadow: #2bf46e23 !important;
+  --color-1-shadow-focus: #e5fb6a67 !important;
+  --color-2-shadow-focus: #2bf46e67 !important;
+  cursor: pointer !important;
+  padding: 1rem 1.5rem !important;
+  border-radius: 0.75rem !important;
+  border: 0 !important;
+  font-size: 1rem !important;
+  background: linear-gradient(
+    to right bottom,
+    var(--color-1) 0%,
+    var(--color-2) 100%
+  ) !important;
+  background-image: linear-gradient(
+    to right bottom,
+    var(--color-1) 0%,
+    var(--color-2) 100%
+  ) !important;
+  box-shadow:
+    -4px -4px 16px 8px var(--color-1-shadow),
+    4px 4px 16px 8px var(--color-2-shadow) !important;
+  transition: all 0.3s cubic-bezier(0.6, 0.12, 0.39, 0.83) !important;
+  color: #000000 !important;
+  font-weight: 500 !important;
+}
+
+.awesome-button:hover,
+.awesome-button:active,
+.awesome-button:focus,
+.awesome-button:focus-visible,
+.awesome-button:focus-within,
+button.awesome-button:hover,
+button.awesome-button:active,
+button.awesome-button:focus,
+.admin-content .awesome-button:hover,
+.admin-content .awesome-button:active,
+.admin-content .awesome-button:focus {
+  box-shadow:
+    -4px -4px 32px 4px var(--color-1-shadow-focus),
+    4px 4px 32px 4px var(--color-2-shadow-focus) !important;
+  background: linear-gradient(
+    to right bottom,
+    var(--color-1) 0%,
+    var(--color-2) 100%
+  ) !important;
+  background-image: linear-gradient(
+    to right bottom,
+    var(--color-1) 0%,
+    var(--color-2) 100%
+  ) !important;
+}
+
+.awesome-button:hover,
+button.awesome-button:hover,
+.admin-content .awesome-button:hover {
+  filter: contrast(1.25) !important;
 }
 

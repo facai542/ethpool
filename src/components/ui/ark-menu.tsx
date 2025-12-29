@@ -33,7 +33,7 @@ export const ArkMenu = ({ trigger, groups, triggerClassName }: ArkMenuProps) => 
       )}
     </Menu.Trigger>
     <Menu.Positioner>
-      <Menu.Content className="mt-2 w-52 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg p-2 text-sm text-gray-800 dark:text-gray-200 z-[9999]">
+      <Menu.Content className="mt-2 w-52 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg p-2 text-sm text-gray-800 dark:text-gray-200">
         {groups.map((group, gIndex) => (
           <div key={group.label}>
             <Menu.ItemGroup>
@@ -69,23 +69,23 @@ interface ActionMenuProps {
 }
 
 export const ActionMenu = ({ groups }: ActionMenuProps) => (
-  <Menu.Root>
+  <Menu.Root positioning={{ strategy: 'fixed', placement: 'bottom-end', offset: { mainAxis: 4, crossAxis: -192 } }}>
     <Menu.Trigger className="flex items-center justify-center rounded-lg p-2 hover:bg-slate-700 transition text-slate-400 hover:text-white">
       <MoreHorizontal size={16} />
     </Menu.Trigger>
     <Menu.Positioner>
-      <Menu.Content className="mt-2 w-48 rounded-xl border border-slate-700 bg-black shadow-lg p-2 text-sm text-slate-200 z-[9999]">
+      <Menu.Content className="mt-2 w-48 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg p-2 text-sm text-gray-800 dark:text-gray-200 z-[9999]">
         {groups.map((group, gIndex) => (
           <div key={group.label}>
             <Menu.ItemGroup>
-              <Menu.ItemGroupLabel className="px-2 py-1 text-xs font-semibold text-slate-500 uppercase">
+              <Menu.ItemGroupLabel className="px-2 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
                 {group.label}
               </Menu.ItemGroupLabel>
               {group.items.map((item, itemIndex) => (
                 <Menu.Item
                   key={`${group.label}-${itemIndex}`}
                   value={item.label.toLowerCase()}
-                  className={`rounded-lg px-3 py-2 hover:bg-slate-700 cursor-pointer flex items-center gap-2 transition-colors ${item.className || ''} ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`rounded-lg px-3 py-2 hover:bg-indigo-100 dark:hover:bg-indigo-600/40 hover:text-indigo-600 dark:hover:text-indigo-300 cursor-pointer flex items-center gap-2 transition-colors ${item.className || ''} ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                   onClick={item.disabled ? undefined : item.onClick}
                   disabled={item.disabled}
                 >
@@ -95,7 +95,7 @@ export const ActionMenu = ({ groups }: ActionMenuProps) => (
               ))}
             </Menu.ItemGroup>
             {gIndex < groups.length - 1 && (
-              <div className="my-1 h-px bg-slate-700" />
+              <div className="my-1 h-px bg-gray-200 dark:bg-gray-700" />
             )}
           </div>
         ))}

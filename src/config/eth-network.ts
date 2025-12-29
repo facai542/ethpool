@@ -1,15 +1,17 @@
 // ETH 网络配置
-// 使用 Tenderly 虚拟测试网进行测试
+// 以太坊主网配置
 
 export const ETH_NETWORK_CONFIG = {
-  // Tenderly 虚拟测试网 RPC URL
-  RPC_URL: process.env.ETH_RPC_URL || 'https://virtual.mainnet.eu.rpc.tenderly.co/58095ba4-b67b-4671-8302-50cd5e04cbef',
+  // 以太坊主网 RPC URL
+  RPC_URL: process.env.ETH_RPC_URL || 'https://eth.llamarpc.com',
   
-  // 备用 RPC 节点（如果需要）
+  // 备用 RPC 节点
   FALLBACK_RPC_URLS: [
-    'https://virtual.mainnet.eu.rpc.tenderly.co/58095ba4-b67b-4671-8302-50cd5e04cbef',
-    'https://ethereum.publicnode.com',
     'https://eth.llamarpc.com',
+    'https://ethereum.publicnode.com',
+    'https://eth-mainnet.public.blastapi.io',
+    'https://rpc.ankr.com/eth',
+    'https://eth-mainnet.g.alchemy.com/v2/demo',
   ],
   
   // USDT 合约地址（ETH 主网）
@@ -21,14 +23,14 @@ export const ETH_NETWORK_CONFIG = {
   // USDT 精度
   USDT_DECIMALS: 6,
   
-  // 链 ID（ETH 主网 = 1，测试网可能不同）
+  // 链 ID（ETH 主网 = 1）
   CHAIN_ID: 1,
   
   // 网络名称
-  NETWORK_NAME: 'Tenderly Virtual Mainnet',
+  NETWORK_NAME: 'Ethereum Mainnet',
   
   // 是否为测试环境
-  IS_TESTNET: true,
+  IS_TESTNET: false,
 }
 
 export default ETH_NETWORK_CONFIG
