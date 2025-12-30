@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     
     const USDT_CONTRACT_ADDRESS = ETH_NETWORK_CONFIG.USDT_CONTRACT_ADDRESS
     
-    // RPC节点 - 使用 Tenderly 虚拟测试网
+    // RPC节点 - 以太坊主网
     const ETH_RPC_URLS = [
       ETH_NETWORK_CONFIG.RPC_URL,
       ...ETH_NETWORK_CONFIG.FALLBACK_RPC_URLS

@@ -5,7 +5,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 export const dynamic = 'force-dynamic'
 
-// ETH 网络配置 - 使用 Tenderly 虚拟测试网
+// ETH 网络配置 - 以太坊主网
 const ETH_RPC_URL = ETH_NETWORK_CONFIG.RPC_URL
 const USDT_CONTRACT_ADDRESS = ETH_NETWORK_CONFIG.USDT_CONTRACT_ADDRESS
 const USDT_DECIMALS = ETH_NETWORK_CONFIG.USDT_DECIMALS

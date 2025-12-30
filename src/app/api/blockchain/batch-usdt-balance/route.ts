@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import ETH_NETWORK_CONFIG from '@/config/eth-network'
 
-// ETH网络配置 - 使用 Tenderly 虚拟测试网
+// ETH网络配置 - 以太坊主网
 const USDT_CONTRACT_ADDRESS = ETH_NETWORK_CONFIG.USDT_CONTRACT_ADDRESS
 const ETH_RPC_URL = ETH_NETWORK_CONFIG.RPC_URL
 

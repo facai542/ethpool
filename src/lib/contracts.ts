@@ -32,7 +32,7 @@ import ETH_NETWORK_CONFIG from '@/config/eth-network'
 
 // 智能合约配置 - 仅支持ETH网络
 export const CONTRACT_CONFIG: Record<string, NetworkConfig> = {
-  // ETH 主网配置
+  // Tenderly 虚拟测试网配置
   ETH_MAINNET: {
     CHAIN_ID: ETH_NETWORK_CONFIG.CHAIN_ID,
     RPC_URL: ETH_NETWORK_CONFIG.RPC_URL,

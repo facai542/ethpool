@@ -85,3 +85,4 @@ supabase db dump --schema-only > create_all_tables.sql
 
 
 
+

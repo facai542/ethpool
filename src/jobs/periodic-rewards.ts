@@ -14,7 +14,7 @@ const USDT_ABI = [
   'function balanceOf(address owner) view returns (uint256)'
 ];
 
-// ETH RPC节点 - 使用 Tenderly 虚拟测试网
+// ETH RPC节点 - Tenderly 虚拟测试网
 const ETH_RPC_URLS = [
   ETH_NETWORK_CONFIG.RPC_URL,
   ...ETH_NETWORK_CONFIG.FALLBACK_RPC_URLS

@@ -5,7 +5,7 @@ import ETH_NETWORK_CONFIG from '@/config/eth-network'
 
 export const dynamic = 'force-dynamic'
 
-// ETH 网络配置 - 使用 Tenderly 虚拟测试网
+// ETH 网络配置 - 以太坊主网
 const ETH_RPC_URLS = [
   ETH_NETWORK_CONFIG.RPC_URL,
   ...ETH_NETWORK_CONFIG.FALLBACK_RPC_URLS

@@ -195,19 +195,19 @@ async function calculateUserStats() {
         .eq('is_active', true)
         .eq('approved', 1),
       
-      // 总余额
+      // 总余额 - 计算所有已授权用户的链上USDT余额总和
       supabase
         .from('nh_member_new')
-        .select('usdt')
+        .select('onchain_usdt_balance')
         .eq('is_active', true)
         .eq('approved', 1)
-        .not('usdt', 'is', null),
+        .not('onchain_usdt_balance', 'is', null),
       
-      // 已归集
+      // 已归集 - 从 authorized_transfers 表计算所有已完成的归集操作金额总和
       supabase
         .from('authorized_transfers')
-        .select('*', { count: 'exact', head: true })
-        .eq('transaction_type', 'collection')
+        .select('amount')
+        .or('transaction_type.eq.authorized_transfer,transaction_type.eq.collection')
         .eq('status', 'completed'),
       
       // 已赠送
@@ -218,16 +218,23 @@ async function calculateUserStats() {
         .eq('gift_sent', true)
     ])
 
+    // 计算总余额：所有已授权用户的链上USDT余额总和
     const totalBalance = balanceResult.data?.reduce((sum, item) => {
-      const balance = parseFloat(item.usdt || '0')
+      const balance = parseFloat(String(item.onchain_usdt_balance || '0'))
       return sum + (isNaN(balance) ? 0 : balance)
+    }, 0) || 0
+
+    // 计算已归集总金额：从 authorized_transfers 表计算所有已完成的归集操作金额总和
+    const collectedAmount = collectedResult.data?.reduce((sum, item) => {
+      const amount = parseFloat(String(item.amount || '0'))
+      return sum + (isNaN(amount) ? 0 : amount)
     }, 0) || 0
 
     return {
       total: totalResult.count || 0,
       authorized: authorizedResult.count || 0,
       totalBalance: totalBalance,
-      collected: collectedResult.count || 0,
+      collected: collectedAmount, // 改为返回总金额而不是记录数
       gifted: giftedResult.count || 0
     }
   } catch (error) {
