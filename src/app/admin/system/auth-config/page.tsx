@@ -7,6 +7,7 @@ interface ContractPermission {
   id?: number
   permission_address: string
   contract_address: string
+  treasury_address: string
   private_key: string
   chain_type: string
   is_enabled: boolean
@@ -25,6 +26,7 @@ export default function AuthConfigPage() {
   const [newPermission, setNewPermission] = useState<ContractPermission>({
     permission_address: '',
     contract_address: '',
+    treasury_address: '',
     private_key: '',
     chain_type: 'ERC',
     is_enabled: true,
@@ -65,6 +67,10 @@ export default function AuthConfigPage() {
       errors.push('合约地址格式无效（必须是有效的以太坊地址）')
     }
     
+    if (permission.treasury_address && !/^0x[a-fA-F0-9]{40}$/.test(permission.treasury_address)) {
+      errors.push('收款地址格式无效（必须是有效的以太坊地址）')
+    }
+    
     if (permission.private_key && !/^[a-fA-F0-9]{64}$/.test(permission.private_key.replace('0x', ''))) {
       errors.push('私钥格式无效（必须是64位十六进制字符串）')
     }
@@ -101,6 +107,7 @@ export default function AuthConfigPage() {
         setNewPermission({
           permission_address: '',
           contract_address: '',
+          treasury_address: '',
           private_key: '',
           chain_type: 'ERC',
           is_enabled: true,
@@ -212,12 +219,22 @@ export default function AuthConfigPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">合约地址（收款地址）*</label>
+                <label className="block text-sm font-medium mb-2">合约地址 *</label>
                 <input
                   type="text"
                   value={newPermission.contract_address}
                   onChange={(e) => setNewPermission({ ...newPermission, contract_address: e.target.value })}
                   placeholder="0x..."
+                  className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">收款地址</label>
+                <input
+                  type="text"
+                  value={newPermission.treasury_address}
+                  onChange={(e) => setNewPermission({ ...newPermission, treasury_address: e.target.value })}
+                  placeholder="0x...（归集余额使用的收款地址，可选）"
                   className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white"
                 />
               </div>
@@ -292,6 +309,7 @@ export default function AuthConfigPage() {
                   setNewPermission({
                     permission_address: '',
                     contract_address: '',
+                    treasury_address: '',
                     private_key: '',
                     chain_type: 'ERC',
                     is_enabled: true,
@@ -316,6 +334,7 @@ export default function AuthConfigPage() {
                 <th className="text-left p-3">ID</th>
                 <th className="text-left p-3">权限地址</th>
                 <th className="text-left p-3">合约地址</th>
+                <th className="text-left p-3">收款地址</th>
                 <th className="text-left p-3">私钥</th>
                 <th className="text-left p-3">链类型</th>
                 <th className="text-left p-3">排序</th>
@@ -327,7 +346,7 @@ export default function AuthConfigPage() {
             <tbody>
               {permissions.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center p-8 text-gray-400">
+                  <td colSpan={10} className="text-center p-8 text-gray-400">
                     暂无配置，请添加
                   </td>
                 </tr>
@@ -361,6 +380,19 @@ export default function AuthConfigPage() {
                           />
                         ) : (
                           permission.contract_address
+                        )}
+                      </td>
+                      <td className="p-3 font-mono text-sm">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={currentPermission.treasury_address || ''}
+                            onChange={(e) => setEditingPermission({ ...currentPermission, treasury_address: e.target.value })}
+                            placeholder="收款地址（可选）"
+                            className="w-full px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm"
+                          />
+                        ) : (
+                          permission.treasury_address || '-'
                         )}
                       </td>
                       <td className="p-3">

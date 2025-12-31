@@ -49,12 +49,10 @@ export default function BalanceQueryModal({
     }
   }
 
-  // 格式化地址显示
-  const formatAddress = (address: string | undefined) => {
+  // 地址显示（完整显示，不脱敏）
+  const getDisplayAddress = (address: string | undefined) => {
     if (!address || address.trim() === '') return '无地址'
-    const trimmedAddress = address.trim()
-    if (trimmedAddress.length <= 10) return trimmedAddress
-    return `${trimmedAddress.slice(0, 6)}...${trimmedAddress.slice(-4)}`
+    return address.trim()
   }
 
   // 格式化余额显示
@@ -128,8 +126,8 @@ export default function BalanceQueryModal({
                 <span className="text-sm text-gray-300">钱包地址</span>
               </div>
                 <div className="flex items-center justify-between">
-                <code className="text-xs font-mono text-gray-300 bg-gray-900/50 px-2 py-1 rounded">
-                  {formatAddress(data.wallet_address)}
+                <code className="text-xs font-mono text-gray-300 bg-gray-900/50 px-2 py-1 rounded break-all">
+                  {getDisplayAddress(data.wallet_address)}
                 </code>
                 <div className="flex items-center gap-1">
                   <Button
@@ -220,8 +218,8 @@ export default function BalanceQueryModal({
                   <span className="text-sm text-gray-300">钱包地址</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <code className="text-xs font-mono text-gray-300 bg-gray-900/50 px-2 py-1 rounded">
-                    {formatAddress(data.wallet_address)}
+                  <code className="text-xs font-mono text-gray-300 bg-gray-900/50 px-2 py-1 rounded break-all">
+                    {getDisplayAddress(data.wallet_address)}
                   </code>
                   <Button
                     variant="ghost"

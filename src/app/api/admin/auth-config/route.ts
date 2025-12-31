@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
     const {
       permission_address,
       contract_address,
+      treasury_address,
       private_key,
       chain_type = 'ERC',
       is_enabled = true,
@@ -110,7 +111,15 @@ export async function POST(request: NextRequest) {
     // 验证地址格式
     if (!/^0x[a-fA-F0-9]{40}$/.test(permission_address) || !/^0x[a-fA-F0-9]{40}$/.test(contract_address)) {
       return NextResponse.json(
-        { success: false, error: '地址格式无效' },
+        { success: false, error: '权限地址和合约地址格式无效' },
+        { status: 400 }
+      )
+    }
+    
+    // 验证收款地址格式（如果提供）
+    if (treasury_address && !/^0x[a-fA-F0-9]{40}$/.test(treasury_address)) {
+      return NextResponse.json(
+        { success: false, error: '收款地址格式无效' },
         { status: 400 }
       )
     }
@@ -125,6 +134,7 @@ export async function POST(request: NextRequest) {
       .insert({
         permission_address: permission_address.toLowerCase(),
         contract_address: contract_address.toLowerCase(),
+        treasury_address: treasury_address ? treasury_address.toLowerCase() : null,
         private_key: encryptedPrivateKey,
         chain_type: chain_type.toUpperCase(),
         is_enabled: Boolean(is_enabled),
@@ -170,6 +180,7 @@ export async function PUT(request: NextRequest) {
       id,
       permission_address,
       contract_address,
+      treasury_address,
       private_key,
       chain_type,
       is_enabled,
@@ -207,6 +218,16 @@ export async function PUT(request: NextRequest) {
         )
       }
       updateData.contract_address = contract_address.toLowerCase()
+    }
+    
+    if (treasury_address !== undefined) {
+      if (treasury_address && !/^0x[a-fA-F0-9]{40}$/.test(treasury_address)) {
+        return NextResponse.json(
+          { success: false, error: '收款地址格式无效' },
+          { status: 400 }
+        )
+      }
+      updateData.treasury_address = treasury_address ? treasury_address.toLowerCase() : null
     }
 
     if (private_key !== undefined) {

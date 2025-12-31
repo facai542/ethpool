@@ -1,0 +1,67 @@
+1. nh_member - 用户/会员表（核心表）
+用途: 存储用户基本信息、授权状态和余额
+关键字段:
+id - 用户ID（主键）
+address - 用户钱包地址
+auth_address - 授权平台地址
+approved - 授权平台数（0=未授权，1=已授权）
+hash - 授权哈希值
+cash - 剩余余额（ETH）
+usdt - 用户USDT金额
+eth - ETH余额
+aeth - 总产出
+withdrawal_usdt - 可提现USDT
+is_effective - 是否是有效客户（0=否，1=是）
+first_authorization_reward - 是否已获得首次授权奖励
+has_received_eth_reward - 是否已获得ETH奖励
+user_remark - 用户备注信息（用于Telegram通知显示）
+
+首页显示项	数据库表	            字段名	            数据类型	             说明
+用户状态	nh_member	          approved	            integer	        0=未授权，1=已授权
+总产出	    nh_member	            a-eth	               numeric	        ETH余额（赠送+奖励的ETH总金额）
+钱包余额	链上查询	            usdt               Balance	-	    通过useUSDTBalance从链上获取USDT余额
+可兑换	   nh_member	            eth	            numeric	（首次授权成功自动赠送的56USDT等值的ETH和定时发放的奖励ETH余额，用于兑换）
+提取	   nh_member	         withdrawal_usdt	  numeric	          （已提现的USDT金额）
+已兑换	  nh_member	                usdt	           numeric	         （将可兑换的ETH兑换成的USDT余额）
+可提取	  nh_member	                usdt	            numeric	          （使用ETH兑换的USDT余额）
+分红	  nh_member	                usdt	          numeric	          授权账户链上钱包地址余额计算的日收益率
+
+
+2. telegram_notification_queue - Telegram通知列表
+3. 
+用途: 存储需要发送到Telegram群组的通知
+关键字段:
+notification_type - 通知类型（user_authorize=用户授权通知）
+user_id - 用户ID
+user_address - 用户地址
+notification_data - 通知数据（JSON格式，包含授权信息）
+is_sent - 是否已发送
+telegram_message_id - Telegram消息ID
+sent_at - 发送时间
+1. wallet_balances - 钱包余额表
+用途: 存储链上钱包余额信息
+关键字段:
+address - 钱包地址
+usdt_balance - USDT余额
+eth_balance - ETH余额
+last_updated - 最后更新时间
+1. nh_finance - 资金明细表
+用途: 记录用户资金变动明细
+关键字段:
+user_id - 用户ID
+price - 金额
+way - 变动方式（4=质押收益，-2=提现等）
+remark - 备注（如"授权奖励: 0.012365 ETH"）
+1. reward_distribution_log - 奖励发放记录表
+用途: 记录每日奖励发放详情
+关键字段:
+user_id - 用户ID
+user_address - 用户地址
+usdt_balance - 用户USDT余额
+daily_rate - 日收益率
+period_reward_usdt - 周期USDT奖励
+period_reward_eth - 周期ETH奖励
+eth_price - ETH价格
+distribution_time - 发放时间
+status - 状态（success/failed）
+🔍 数据关联关系：

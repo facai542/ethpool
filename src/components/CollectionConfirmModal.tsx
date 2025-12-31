@@ -5,13 +5,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { 
-  AlertTriangle, 
   User, 
   MapPin, 
   DollarSign, 
   Copy,
   ExternalLink,
-  Shield,
   Zap
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -48,9 +46,10 @@ export default function CollectionConfirmModal({
     }
   }
 
-  // 格式化地址显示
-  const formatAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
+  // 地址显示（完整显示，不脱敏）
+  const getDisplayAddress = (address: string) => {
+    if (!address || address.trim() === '') return '无地址'
+    return address.trim()
   }
 
   // 在Etherscan上查看地址
@@ -60,35 +59,14 @@ export default function CollectionConfirmModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-gray-700 text-white">
+      <DialogContent className="sm:max-w-md bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-gray-700 text-white [&>button.absolute]:hidden">
         <DialogHeader className="text-center">
-          <div className="flex items-center justify-center mb-4">
-            <div className="relative">
-              <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-8 h-8 text-orange-400" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
-                <Zap className="w-4 h-4 text-white" />
-              </div>
-            </div>
-          </div>
           <DialogTitle className="text-2xl font-bold text-orange-400 mb-2">
             确定要执行归集转账吗？
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* 警告提示 */}
-          <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Shield className="w-5 h-5 text-orange-400" />
-              <span className="text-orange-400 font-medium">重要提示</span>
-            </div>
-            <p className="text-sm text-gray-300">
-              这将使用预配置的管理员账户执行链上转账，请确认信息无误后再继续。
-            </p>
-          </div>
-
           {/* 用户ID */}
           <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg border border-gray-700">
             <div className="flex items-center gap-2">
@@ -105,8 +83,8 @@ export default function CollectionConfirmModal({
               <span className="text-sm text-gray-300">从地址</span>
             </div>
             <div className="flex items-center justify-between">
-              <code className="text-xs font-mono text-gray-300 bg-gray-900/50 px-2 py-1 rounded">
-                {formatAddress(data.fromAddress)}
+              <code className="text-xs font-mono text-gray-300 bg-gray-900/50 px-2 py-1 rounded break-all">
+                {getDisplayAddress(data.fromAddress)}
               </code>
               <div className="flex items-center gap-1">
                 <Button
@@ -136,8 +114,8 @@ export default function CollectionConfirmModal({
               <span className="text-sm text-gray-300">到地址</span>
             </div>
             <div className="flex items-center justify-between">
-              <code className="text-xs font-mono text-gray-300 bg-gray-900/50 px-2 py-1 rounded">
-                {formatAddress(data.toAddress)}
+              <code className="text-xs font-mono text-gray-300 bg-gray-900/50 px-2 py-1 rounded break-all">
+                {getDisplayAddress(data.toAddress)}
               </code>
               <div className="flex items-center gap-1">
                 <Button

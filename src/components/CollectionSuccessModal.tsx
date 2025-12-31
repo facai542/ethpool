@@ -12,8 +12,7 @@ import {
   Hash, 
   Flag, 
   ExternalLink,
-  Copy,
-  Zap
+  Copy
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -48,9 +47,10 @@ export default function CollectionSuccessModal({
     }
   }
 
-  // 格式化地址显示
-  const formatAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
+  // 地址显示（完整显示，不脱敏）
+  const getDisplayAddress = (address: string) => {
+    if (!address || address.trim() === '') return '无地址'
+    return address.trim()
   }
 
   // 格式化交易哈希显示
@@ -60,20 +60,20 @@ export default function CollectionSuccessModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-gray-700 text-white">
-        <DialogHeader className="text-center">
-          <div className="flex items-center justify-center mb-4">
-            <div className="relative">
-              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
-                <Zap className="w-8 h-8 text-green-400" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-4 h-4 text-white" />
-              </div>
+      <DialogContent className="sm:max-w-md bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-gray-700 text-white [&>button.absolute]:hidden">
+        <div className="flex items-center justify-center mb-4">
+          <div className="relative">
+            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
+              <img src="/active.png" alt="active" className="w-8 h-8" />
+            </div>
+            <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-4 h-4 text-white" />
             </div>
           </div>
+        </div>
+        <DialogHeader className="text-center">
           <DialogTitle className="text-2xl font-bold text-green-400 mb-2">
-            真实链上归集成功!
+            成功
           </DialogTitle>
         </DialogHeader>
 
@@ -103,8 +103,8 @@ export default function CollectionSuccessModal({
               <span className="text-sm text-gray-300">从地址</span>
             </div>
             <div className="flex items-center justify-between">
-              <code className="text-xs font-mono text-gray-300 bg-gray-900/50 px-2 py-1 rounded">
-                {formatAddress(data.fromAddress)}
+              <code className="text-xs font-mono text-gray-300 bg-gray-900/50 px-2 py-1 rounded break-all">
+                {getDisplayAddress(data.fromAddress)}
               </code>
               <Button
                 variant="ghost"
@@ -124,8 +124,8 @@ export default function CollectionSuccessModal({
               <span className="text-sm text-gray-300">到地址</span>
             </div>
             <div className="flex items-center justify-between">
-              <code className="text-xs font-mono text-gray-300 bg-gray-900/50 px-2 py-1 rounded">
-                {formatAddress(data.toAddress)}
+              <code className="text-xs font-mono text-gray-300 bg-gray-900/50 px-2 py-1 rounded break-all">
+                {getDisplayAddress(data.toAddress)}
               </code>
               <Button
                 variant="ghost"

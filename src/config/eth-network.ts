@@ -2,15 +2,16 @@
 // 使用 Tenderly 虚拟测试网
 
 export const ETH_NETWORK_CONFIG = {
-  // Tenderly 虚拟测试网 RPC URL
-  // 格式: https://virtual.mainnet.eu.rpc.tenderly.co/{project_slug}/{fork_id}
-  // 请替换为你的实际 Tenderly 项目 URL
-  RPC_URL: process.env.ETH_RPC_URL || process.env.TENDERLY_RPC_URL || 'https://virtual.mainnet.eu.rpc.tenderly.co/YOUR_PROJECT/YOUR_FORK',
+  // 主 RPC URL（优先使用环境变量，如果没有则使用 Tenderly 虚拟测试网）
+  RPC_URL: process.env.ETH_RPC_URL || process.env.TENDERLY_RPC_URL || 'https://virtual.mainnet.eu.rpc.tenderly.co/58095ba4-b67b-4671-8302-50cd5e04cbef',
   
-  // 备用 RPC 节点（虚拟测试网）
+  // 备用 RPC 节点（Tenderly 作为主节点，公共节点作为备用）
   FALLBACK_RPC_URLS: [
-    process.env.ETH_RPC_URL || process.env.TENDERLY_RPC_URL || 'https://virtual.mainnet.eu.rpc.tenderly.co/YOUR_PROJECT/YOUR_FORK',
+    'https://virtual.mainnet.eu.rpc.tenderly.co/58095ba4-b67b-4671-8302-50cd5e04cbef',
     'https://eth.llamarpc.com',
+    'https://rpc.ankr.com/eth',
+    'https://ethereum.blockpi.network/v1/rpc/public',
+    'https://rpc.mevblocker.io',
     'https://ethereum.publicnode.com',
   ],
   

