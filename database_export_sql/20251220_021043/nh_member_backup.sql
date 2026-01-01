@@ -1,4 +1,0 @@
-INSERT INTO nh_member_backup (id, token, agent_id, pid, address, auth_address, add_time, update_time, is_del, status, childs, cash, invite_code, type, usdt, eth, is_effective, withdrawal_usdt, pretime, ip, hash, forbid_tx, forbid_day, forbid_stime, forbid_etime, approved, gj_cash, gj_status, pause, user_remark, first_authorization_reward, has_received_eth_reward, approval_status, total_eth_received, reward_eth_balance, withdrawn_usdt, exchanged_usdt, withdrawable_usdt, total_dividend) VALUES
-  (307, NULL, 0, 0, '0x1234567890123456789012345678901234567890', '0x1234567890123456789012345678901234567890', NULL, NULL, 0, 1, NULL, 0.0, NULL, NULL, 0.0, 0.0, 0, 0.0, NULL, NULL, NULL, 2, 30, NULL, NULL, 0, 0.0, 1, 2, NULL, false, false, 1, 10.5, 5.2, 100.0, 200.0, 150.0, 50.0)
-ON CONFLICT DO NOTHING;
-
